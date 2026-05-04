@@ -1,9 +1,8 @@
 from google import genai
-import time
 import json
 from config.settings import GEMINI_API_KEY
 
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.0-flash-lite" 
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -26,14 +25,14 @@ def analyze_review_with_gemini(text):
                 "response_mime_type": "application/json"
             }
         )
-
+        
         return json.loads(response.text)
 
     except Exception as e:
         if "429" in str(e):
-            print("Quota exceeded! Waiting 10 seconds...")
-            time.sleep(10)
-            return analyze_review_with_gemini(text)
+            return {
+                "error": "QUOTA_EXCEEDED",
+                "message": "The API is currently busy. Please wait 60 seconds and try again."
+            }
         
         return {"error": str(e)}
-
