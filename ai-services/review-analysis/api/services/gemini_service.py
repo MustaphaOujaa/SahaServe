@@ -1,43 +1,39 @@
-import requests
+from google import genai
+import time
+import json
 from config.settings import GEMINI_API_KEY
 
-MODEL = "models/gemini-2.0-flash-001"
+MODEL_NAME = "gemini-2.0-flash"
 
-URL = f"https://generativelanguage.googleapis.com/v1/{MODEL}:generateContent?key={GEMINI_API_KEY}"
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 def analyze_review_with_gemini(text):
     prompt = f"""
-Analyze this restaurant review and return STRICT JSON only:
-
-{{
-  "sentiment": "positive or negative",
-  "main_issue": "short phrase",
-  "category": "food | service | delivery | price | cleanliness"
-}}
-
-Review: "{text}"
-"""
-
-    body = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
-    }
-
-    response = requests.post(URL, json=body)
-
-    if response.status_code != 200:
-        return {"error": response.text}
+    Analyze this restaurant review and return STRICT JSON only:
+    {{
+      "sentiment": "positive or negative",
+      "main_issue": "short phrase",
+      "category": "food | service | delivery | price | cleanliness"
+    }}
+    Review: "{text}"
+    """
 
     try:
-        data = response.json()
-        output = data["candidates"][0]["content"]["parts"][0]["text"]
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json"
+            }
+        )
 
-        return output
+        return json.loads(response.text)
 
     except Exception as e:
-        return {"error": str(e), "raw": response.text}
+        if "429" in str(e):
+            print("Quota exceeded! Waiting 10 seconds...")
+            time.sleep(10)
+            return analyze_review_with_gemini(text)
+        
+        return {"error": str(e)}
+
