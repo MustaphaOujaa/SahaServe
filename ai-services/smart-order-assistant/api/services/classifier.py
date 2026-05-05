@@ -33,7 +33,7 @@ def get_user_intent(user_input):
     
     payload = {
         "inputs": user_input,
-        "parameters": {"candidate_labels": labels, "wait_for_model": True} # أضفنا هذا السطر لانتظار التحميل
+        "parameters": {"candidate_labels": labels, "wait_for_model": True} 
     }
     
     output = query_huggingface(payload)
