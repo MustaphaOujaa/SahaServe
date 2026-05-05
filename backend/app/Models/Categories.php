@@ -6,5 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Categories extends Model
 {
-    //
+    public function dishes()
+    {
+        return $this->hasMany(Dishes::class);
+    }
 }
