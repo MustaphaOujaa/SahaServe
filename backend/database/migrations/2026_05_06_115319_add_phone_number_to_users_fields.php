@@ -10,11 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('email_otps', function (Blueprint $table) {
-            $table->id();
-            $table->string('email');
-            $table->string('otp');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string("phone_number");
         });
     }
 
@@ -23,6 +20,8 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('email_otps');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn("phone_number");
+        });
     }
 };

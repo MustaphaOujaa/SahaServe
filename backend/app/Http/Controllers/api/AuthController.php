@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
-use App\Models\Email_Otp;
+use App\Models\EmailOtp;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -45,7 +46,7 @@ class AuthController extends Controller
         ]);
         $otp = rand(100000, 999999);
 
-        Email_Otp::updateOrCreate(
+        EmailOtp::updateOrCreate(
             ['email' => $request->email],
             [
                 'otp' => $otp,
@@ -77,7 +78,7 @@ class AuthController extends Controller
             'otp' => 'required'
         ]);
 
-        $otpRecord = Email_Otp::where('email', $request->email)
+        $otpRecord = EmailOtp::where('email', $request->email)
             ->where('otp', $request->otp)
             ->first();
 
