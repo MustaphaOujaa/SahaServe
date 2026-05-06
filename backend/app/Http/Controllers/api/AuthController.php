@@ -57,7 +57,7 @@ class AuthController extends Controller
         Mail::send([], [], function ($message) use ($request, $otp) {
             $message->from(config('mail.from.address'), config('mail.from.name'));
             $message->to($request->email);
-            $message->subject('SmartShop Verification Code');
+            $message->subject('SahaServe Verification Code');
             $message->html("<strong>Your OTP code is: $otp</strong>");
         });
 
@@ -84,6 +84,7 @@ class AuthController extends Controller
 
         if (!$otpRecord) {
             return response()->json([
+                'status' => "false",
                 'message' => 'Invalid OTP'
             ], 400);
         }
@@ -130,6 +131,7 @@ class AuthController extends Controller
 
         if (!Auth::attempt($validated)) {
             return response()->json([
+                "status" => "false",
                 'message' => 'Invalid credentials'
             ], 401);
         }
@@ -138,6 +140,7 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
+            "status" => "success",
             'user' => $user,
             'token' => $token,
             'message' => 'logged in'
@@ -211,13 +214,80 @@ class AuthController extends Controller
         ]);
     }
     //forgot password
-    public function forgotPassword()
+    public function forgotPassword(Request $request)
     {
-        //
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $isIn = User::where('email', $request->email)->first();
+
+        if (!$isIn) {
+            return response()->json([
+                "status" => "false",
+                "message" => "no user with this email"
+            ]);
+        }
+
+        $otp = rand(100000, 999999);
+
+        EmailOtp::updateOrCreate(
+            ['email' => $request->email],
+            [
+                'otp' => $otp,
+                'expires_at' => now()->addMinutes(10)
+            ]
+        );
+
+        Mail::send([], [], function ($message) use ($request, $otp) {
+            $message->from(config('mail.from.address'), config('mail.from.name'));
+            $message->to($request->email);
+            $message->subject('SahaServe Verification Code');
+            $message->html("<strong>Your reset password code is: $otp</strong>");
+        });
+
+        return response()->json([
+            "status" => "success",
+            "message" => "OTP sent successfully"
+        ]);
+
     }
     //reset password
-    public function resetPassword()
+    public function resetPassword(Request $request)
     {
-        //
+        $request->validate([
+            "newPassword" => "required|min:6",
+            "email" => "email|required",
+            "otp" => "required"
+        ]);
+
+        $otpRecord = EmailOtp::where("email", $request->email)
+            ->where("otp", $request->otp)
+            ->first();
+
+        if (!$otpRecord) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Invalid OTP'
+            ], 400);
+        }
+
+        if ($otpRecord->expires_at < now()) {
+            return response()->json([
+                'status' => "false",
+                'message' => 'OTP expired'
+            ], 400);
+        }
+
+        $user = User::where("email", $request->email)->first();
+
+        $user->update([
+            "password" => Hash::make($request->newPassword)
+        ]);
+
+        return response()->json([
+            'status' => "success",
+            'message' => "password updated go login!"
+        ]);
     }
 }

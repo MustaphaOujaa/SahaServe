@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AuthController;
 Route::post('/send-otp', [AuthController::class, 'sendOtp']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgotPassword', [AuthController::class, 'forgotPassword']);
+Route::post('/resetPassword', [AuthController::class, 'resetPassword']);
+
 
 //google auth routes 
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
