@@ -28,6 +28,8 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->assignRole('client');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -113,6 +115,8 @@ class AuthController extends Controller
         ]);
 
         $otpRecord->delete();
+
+        $user->assignRole('client');
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
