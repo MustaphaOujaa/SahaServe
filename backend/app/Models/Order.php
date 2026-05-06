@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Orders extends Model
+class Order extends Model
 {
     public function user()
     {
@@ -12,6 +12,6 @@ class Orders extends Model
     }
     public function items()
     {
-        return $this->hasMany(Order_items::class);
+        return $this->hasMany(OrderItem::class);
     }
 }

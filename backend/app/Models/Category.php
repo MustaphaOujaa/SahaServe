@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Categories extends Model
+class Category extends Model
 {
     public function dishes()
     {
-        return $this->hasMany(Dishes::class);
+        return $this->hasMany(Dishe::class);
     }
 }

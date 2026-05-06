@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Carts extends Model
+class Cart extends Model
 {
-    public function users()
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
     public function items()
     {
-        return $this->hasMany(Cart_items::class);
+        return $this->hasMany(CartItem::class);
     }
 }

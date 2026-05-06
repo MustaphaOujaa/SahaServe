@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Cart_items extends Model
+class CartItem extends Model
 {
     public function cart()
     {
-        return $this->belongsTo(Carts::class);
+        return $this->belongsTo(Cart::class);
     }
 
     public function dish()
     {
-        return $this->belongsTo(Dishes::class);
+        return $this->belongsTo(Dishe::class);
     }
 }

@@ -35,14 +35,14 @@ class User extends Authenticatable
         return $this->hasMany(Table::class);
     }
 
-    public function carts()
+    public function cart()
     {
-        return $this->hasOne(Carts::class);
+        return $this->hasOne(Cart::class);
     }
 
     public function orders()
     {
-        return $this->hasMany(Orders::class);
+        return $this->hasMany(Order::class);
     }
 
     public function favorites()
@@ -52,11 +52,11 @@ class User extends Authenticatable
 
     public function reviews()
     {
-        return $this->hasMany(Reviews::class);
+        return $this->hasMany(Review::class);
     }
 
-    public function otps()
+    public function otp()
     {
-        return $this->hasMany(Email_Otp::class);
+        return $this->hasMany(EmailOtp::class);
     }
 }

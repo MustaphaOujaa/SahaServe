@@ -4,35 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Dishes extends Model
+class Dishe extends Model
 {
     public function cartItems()
     {
-        return $this->hasMany(Cart_items::class);
+        return $this->hasMany(CartItem::class);
     }
 
     public function orderItems()
     {
-        return $this->hasMany(Order_items::class);
+        return $this->hasMany(OrderItems::class);
     }
 
     public function category()
     {
-        return $this->belongsTo(Categories::class);
+        return $this->belongsTo(Category::class);
     }
 
     public function images()
     {
-        return $this->hasMany(Dish_image::class);
+        return $this->hasMany(DisheImage::class);
     }
 
     public function favoriteItems()
     {
-        return $this->hasMany(Favorite_items::class);
+        return $this->hasMany(FavoriteItem::class);
     }
 
     public function reviews()
     {
-        return $this->hasMany(Reviews::class);
+        return $this->hasMany(Review::class);
     }
 }

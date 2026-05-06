@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Favorite extends Model
+class Review extends Model
 {
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function dish()
     {
-        return $this->hasMany(FavoriteItem::class);
+        return $this->belongsTo(Dishe::class);
     }
 }

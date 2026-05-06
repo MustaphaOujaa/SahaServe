@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Favorite_items extends Model
+class FavoriteItem extends Model
 {
     public function favorite()
     {
@@ -13,6 +13,6 @@ class Favorite_items extends Model
 
     public function dish()
     {
-        return $this->belongsTo(Dishes::class);
+        return $this->belongsTo(Dishe::class);
     }
 }

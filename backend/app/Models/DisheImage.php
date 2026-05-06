@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Dish_image extends Model
+class DisheImage extends Model
 {
     public function dish()
     {
-        return $this->belongsTo(Dishes::class);
+        return $this->belongsTo(Dishe::class);
     }
 }
