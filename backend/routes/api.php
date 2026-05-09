@@ -10,7 +10,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgotPassword', [AuthController::class, 'forgotPassword']);
 Route::post('/resetPassword', [AuthController::class, 'resetPassword']);
 
-
 //google auth routes 
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
@@ -20,4 +19,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/deleteAccount', [AuthController::class, 'deleteAccount']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::patch('/updateProfile', [AuthController::class, 'updateProfile']);
+    Route::get('/profile', [AuthController::class, 'profile']);
+});
+
+#PROTECTED ROUTES --> ADMIN ONLY ----------------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/all-users', [AuthController::class, 'getAllUsers']);
 });

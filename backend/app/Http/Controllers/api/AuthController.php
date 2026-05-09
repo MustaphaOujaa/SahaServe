@@ -294,4 +294,34 @@ class AuthController extends Controller
             'message' => "password updated go login!"
         ]);
     }
+    //get all users
+    public function getAllUsers()
+    {
+        $users = User::select('id', 'name', 'email', 'adress', 'phone_number', 'image')->latest()->paginate(10);
+
+        return response()->json([
+            'status' => 'success',
+            'users' => $users
+        ], 200);
+    }
+    //get user profile 
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+
+        $data = User::select(
+            'id',
+            'name',
+            'email',
+            'adress',
+            'phone_number',
+            'image'
+        )
+            ->where('id', $user->id)->first();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ], 200);
+    }
 }
