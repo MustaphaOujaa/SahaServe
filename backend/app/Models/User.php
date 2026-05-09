@@ -33,7 +33,7 @@ class User extends Authenticatable
     }
 
     //declare filds to be fillable by user
-    protected $fillable = ["adress", "phone_number", "image"];
+    protected $fillable = ["adress", "phone_number", "image", "avatar", "google_id"];
 
     public function tables()
     {

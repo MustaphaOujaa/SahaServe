@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Http\Controllers\Controller;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
@@ -21,21 +22,38 @@ class AuthController extends Controller
         $user = User::where('email', $googleUser->email)->first();
 
         if (!$user) {
+
             $user = User::create([
                 'name' => $googleUser->name,
                 'email' => $googleUser->email,
+                'google_id' => $googleUser->id,
+                'avatar' => $googleUser->avatar,
                 'password' => bcrypt(uniqid()),
             ]);
+
+            $user->assignRole('client');
+
+        } else {
+
+            if (!$user->google_id) {
+
+                $user->update([
+                    'google_id' => $googleUser->id,
+                    'avatar' => $googleUser->avatar,
+                ]);
+            }
         }
-
-        $user->assignRole('client');
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token
         ]);
+    }
+    //redirect user to google auth page
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
     }
     //first step : send otp
     public function sendOtp(Request $request)
@@ -254,7 +272,6 @@ class AuthController extends Controller
             "status" => "success",
             "message" => "OTP sent successfully"
         ]);
-
     }
     //reset password
     public function resetPassword(Request $request)
