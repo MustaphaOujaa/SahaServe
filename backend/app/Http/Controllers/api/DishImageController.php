@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 
-class DisheController extends Controller
+class DishImageController extends Controller
 {
     //
 }
