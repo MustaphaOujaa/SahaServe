@@ -23,20 +23,26 @@ class RolesAndPermissionsSeeder extends Seeder
             'mark-ready',
             'take-delivery',
             'mark-delivered',
-            'manage-menu',
-            'manage-users'
+            'create-dish',
+            'update-dish',
+            'delete-dish',
+            'manage-users',
+            'create-tag',
+            'update-tag',
+            'delete-tag',
+            'view-tags'
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // roles
-        $admin = Role::create(['name' => 'admin']);
-        $client = Role::create(['name' => 'client']);
-        $server = Role::create(['name' => 'server']);
-        $chef = Role::create(['name' => 'chef']);
-        $delivery = Role::create(['name' => 'delivery']);
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $client = Role::firstOrCreate(['name' => 'client']);
+        $server = Role::firstOrCreate(['name' => 'server']);
+        $chef = Role::firstOrCreate(['name' => 'chef']);
+        $delivery = Role::firstOrCreate(['name' => 'delivery']);
 
         // give permissions
 
@@ -48,13 +54,21 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $server->givePermissionTo([
             'view-orders',
-            'confirm-order'
+            'confirm-order',
+            'view-tags'
         ]);
 
         $chef->givePermissionTo([
             'view-orders',
             'prepare-order',
-            'mark-ready'
+            'mark-ready',
+            'create-tag',
+            'update-tag',
+            'delete-tag',
+            'create-dish',
+            'update-dish',
+            'delete-dish',
+            'view-tags'
         ]);
 
         $delivery->givePermissionTo([
