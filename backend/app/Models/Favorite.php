@@ -10,9 +10,8 @@ class Favorite extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    public function items()
+    public function dishe()
     {
-        return $this->hasMany(FavoriteItem::class);
+        return $this->belongsTo(Dish::class);
     }
 }

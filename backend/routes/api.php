@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TagController;
+use App\Http\Controllers\Api\ReservationController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -41,5 +42,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //----USERS HANDLING----
     Route::get('/all-users', [AuthController::class, 'getAllUsers']);
+
+    //----RESERVATIONS----
+    Route::get('/user-reservations', [ReservationController::class, 'getUserReservations']);
+    Route::get('/all-reservations', [ReservationController::class, 'getAllReservations']);
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::get('/reservations/{id}', [ReservationController::class, 'show']);
+    Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
+    Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
 
 });

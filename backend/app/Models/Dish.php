@@ -26,9 +26,9 @@ class Dish extends Model
         return $this->hasMany(DishImage::class);
     }
 
-    public function favoriteItems()
+    public function favoritedBy()
     {
-        return $this->hasMany(FavoriteItem::class);
+        return $this->belongsToMany(User::class, 'favorites');
     }
 
     public function reviews()

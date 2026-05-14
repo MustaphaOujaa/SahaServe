@@ -35,9 +35,9 @@ class User extends Authenticatable
     //declare filds to be fillable by user
     protected $fillable = ["adress", "phone_number", "image", "avatar", "google_id"];
 
-    public function tables()
+    public function reservations()
     {
-        return $this->hasMany(Table::class);
+        return $this->hasMany(Reservation::class);
     }
 
     public function cart()
@@ -50,9 +50,9 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    public function favorites()
+    public function favoriteDishes()
     {
-        return $this->hasMany(Favorite::class);
+        return $this->belongsToMany(Dish::class, 'favorites');
     }
 
     public function reviews()
