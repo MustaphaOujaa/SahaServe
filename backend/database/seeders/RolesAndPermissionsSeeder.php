@@ -16,63 +16,54 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // permissions
         $permissions = [
-            'create-order',
-            'view-orders',
-            'confirm-order',
-            'prepare-order',
-            'mark-ready',
+            'manage-orders',
+            'manage-reservation',
+            'manage-tables',
             'take-delivery',
             'mark-delivered',
-            'create-dish',
-            'update-dish',
-            'delete-dish',
+            'manage-dishs',
             'manage-users',
-            'create-tag',
-            'update-tag',
-            'delete-tag',
-            'view-tags'
+            'manage-tags',
+            'make-reservation',
+            'make-order'
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'sanctum'
+            ]);
         }
 
         // roles
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $client = Role::firstOrCreate(['name' => 'client']);
-        $server = Role::firstOrCreate(['name' => 'server']);
-        $chef = Role::firstOrCreate(['name' => 'chef']);
-        $delivery = Role::firstOrCreate(['name' => 'delivery']);
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'sanctum']);
+        $client = Role::firstOrCreate(['name' => 'client', 'guard_name' => 'sanctum']);
+        $server = Role::firstOrCreate(['name' => 'server', 'guard_name' => 'sanctum']);
+        $chef = Role::firstOrCreate(['name' => 'chef', 'guard_name' => 'sanctum']);
+        $delivery = Role::firstOrCreate(['name' => 'delivery', 'guard_name' => 'sanctum']);
 
         // give permissions
 
         $admin->givePermissionTo(Permission::all());
 
         $client->givePermissionTo([
-            'create-order'
+            'make-order',
+            'make-reservation',
         ]);
 
         $server->givePermissionTo([
-            'view-orders',
-            'confirm-order',
-            'view-tags'
+            'manage-orders',
+            'manage-tags'
         ]);
 
         $chef->givePermissionTo([
-            'view-orders',
-            'prepare-order',
+            'manage-orders',
             'mark-ready',
-            'create-tag',
-            'update-tag',
-            'delete-tag',
-            'create-dish',
-            'update-dish',
-            'delete-dish',
-            'view-tags'
+            'manage-dishs',
+            'manage-tags',
         ]);
 
         $delivery->givePermissionTo([
-            'view-orders',
             'take-delivery',
             'mark-delivered'
         ]);
