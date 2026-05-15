@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\TableController;
+use App\Http\Controllers\Api\FavoriteController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -34,6 +35,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //tables
     Route::get('/tables', [TableController::class, 'index']);
+
+    //favorites
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{dishId}', [FavoriteController::class, 'destroy']);
 });
 
 ## PROTECTED ROUTES -->
