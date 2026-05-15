@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\TableController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -50,5 +51,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reservations/{id}', [ReservationController::class, 'show']);
     Route::patch('/reservations/{id}', [ReservationController::class, 'update']);
     Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
+
+    //----TABLES----
+    Route::get('/tables', [TableController::class, 'index']);
+    Route::post('/tables', [TableController::class, 'store']);
+    Route::get('/tables/{id}', [TableController::class, 'show']);
+    Route::patch('/tables/{id}', [TableController::class, 'update']);
+    Route::delete('/tables/{id}', [TableController::class, 'destroy']);
+    Route::patch('/tables/{id}/availability', [TableController::class, 'changeAvailablity']);
 
 });
