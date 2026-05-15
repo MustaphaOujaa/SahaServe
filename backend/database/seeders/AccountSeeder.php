@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class AccountSeeder extends Seeder
 {
@@ -13,7 +14,10 @@ class AccountSeeder extends Seeder
      */
     public function run(): void
     {
-        //Admin account
+        // 1. Clear permission cache first to prevent old guard issues
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Admin account
         $admin = User::firstOrCreate(
             ['email' => "admin@email.com"],
             [
@@ -23,9 +27,10 @@ class AccountSeeder extends Seeder
                 'password' => bcrypt('admin123')
             ]
         );
-        $admin->assignRole('admin');
+        // Explicitly look for the 'admin' role belonging to 'sanctum'
+        $admin->assignRole(Role::findByName('admin', 'sanctum'));
 
-        //Chef account
+        // Chef account
         $chef = User::firstOrCreate(
             ['email' => "chef@email.com"],
             [
@@ -35,9 +40,9 @@ class AccountSeeder extends Seeder
                 'password' => bcrypt('chef123')
             ]
         );
-        $chef->assignRole('chef');
+        $chef->assignRole(Role::findByName('chef', 'sanctum'));
 
-        //Server account
+        // Server account
         $server = User::firstOrCreate(
             ['email' => "server@email.com"],
             [
@@ -47,9 +52,9 @@ class AccountSeeder extends Seeder
                 'password' => bcrypt('server123')
             ]
         );
-        $server->assignRole('server');
+        $server->assignRole(Role::findByName('server', 'sanctum'));
 
-        //Delivery account
+        // Delivery account
         $delivery = User::firstOrCreate(
             ['email' => "delivery@email.com"],
             [
@@ -59,7 +64,6 @@ class AccountSeeder extends Seeder
                 'password' => bcrypt('delivery123')
             ]
         );
-        $delivery->assignRole('delivery');
-
+        $delivery->assignRole(Role::findByName('delivery', 'sanctum'));
     }
 }

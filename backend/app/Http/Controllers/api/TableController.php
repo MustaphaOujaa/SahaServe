@@ -44,14 +44,14 @@ class TableController extends Controller
     /**
      * Display the specified table.
      */
-    public function show($id)
-    {
-        $table = Table::findOrFail($id);
-        return response()->json([
-            'success' => true,
-            'data' => $table
-        ]);
-    }
+    // public function show($id)
+    // {
+    //     $table = Table::findOrFail($id);
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $table
+    //     ]);
+    // }
 
     /**
      * Update the specified table in storage.
@@ -93,24 +93,16 @@ class TableController extends Controller
     /**
      * Toggle the availability of the specified table.
      */
-    public function changeAvailablity($id)
-    {
-        $table = Table::findOrFail($id);
-        $table->is_available = !$table->is_available;
-        $table->save();
+    //     public function changeAvailablity($id)
+//     {
+//         $table = Table::findOrFail($id);
+//         $table->is_available = !$table->is_available;
+//         $table->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Table availability updated',
-            'data' => $table
-        ]);
-    }
+    //         return response()->json([
+//             'success' => true,
+//             'message' => 'Table availability updated',
+//             'data' => $table
+//         ]);
+//     }
 }
-
-
-
-/**
- * ------------------------
- * ghayad lasol ibadl gha masantistay mn ba3d ikhasa is_availabl aytbadal wahdot logtna tzri reservation
- * -----------------------------------------------------------------------------------------------------
- */

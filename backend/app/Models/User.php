@@ -32,6 +32,8 @@ class User extends Authenticatable
         ];
     }
 
+    protected $guard_name = 'sanctum';
+
     //declare filds to be fillable by user
     protected $fillable = ["adress", "phone_number", "image", "avatar", "google_id"];
 

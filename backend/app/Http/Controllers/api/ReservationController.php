@@ -103,24 +103,22 @@ class ReservationController extends Controller
     /**
      * Display the specified reservation.
      */
-    public function show(Request $request, $id)
-    {
-        $reservation = Reservation::with(['user', 'table'])->find($id);
+    // public function show(Request $request, $id)
+    // {
+    //     $reservation = Reservation::with(['user', 'table'])->find($id);
 
-        if (!$reservation) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Reservation not found'
-            ], 404);
-        }
+    //     if (!$reservation) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Reservation not found'
+    //         ], 404);
+    //     }
 
-
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $reservation
-        ]);
-    }
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'data' => $reservation
+    //     ]);
+    // }
 
     /**
      * Update the specified reservation in storage.
