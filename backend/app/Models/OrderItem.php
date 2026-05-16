@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
 {
+    protected $fillable = ['order_id', 'dish_id', 'quantity', 'price'];
+
     public function order()
     {
         return $this->belongsTo(Order::class);
@@ -13,6 +14,6 @@ class OrderItem extends Model
 
     public function dish()
     {
-        return $this->belongsTo(Dishe::class);
+        return $this->belongsTo(Dish::class);
     }
 }
