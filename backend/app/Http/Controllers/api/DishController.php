@@ -1,11 +1,64 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\Controller;
+use App\Models\Dish;
 use Illuminate\Http\Request;
 
 class DishController extends Controller
 {
-    //
+    public function index()
+    {
+        return response()->json(['success' => true, 'data' => Dish::with(['category', 'images', 'tags'])->get()]);
+    }
+
+    public function show($id)
+    {
+        $dish = Dish::with(['category', 'images', 'reviews.user', 'tags'])->find($id);
+        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        return response()->json(['success' => true, 'data' => $dish]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'is_available' => 'boolean',
+        ]);
+        
+        if (!isset($validated['is_available'])) {
+             $validated['is_available'] = true;
+        }
+
+        $dish = Dish::create($validated);
+        return response()->json(['success' => true, 'data' => $dish], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $dish = Dish::find($id);
+        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+
+        $validated = $request->validate([
+            'category_id' => 'sometimes|exists:categories,id',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'sometimes|numeric|min:0',
+            'is_available' => 'boolean',
+        ]);
+        $dish->update($validated);
+        return response()->json(['success' => true, 'data' => $dish]);
+    }
+
+    public function destroy($id)
+    {
+        $dish = Dish::find($id);
+        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        $dish->delete();
+        return response()->json(['success' => true, 'message' => 'Deleted successfully']);
+    }
 }

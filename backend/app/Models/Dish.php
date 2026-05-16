@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Dish extends Model
 {
+    protected $fillable = ['category_id', 'name', 'description', 'price', 'is_available'];
+
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);

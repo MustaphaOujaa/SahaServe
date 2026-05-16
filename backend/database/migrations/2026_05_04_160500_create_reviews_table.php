@@ -12,7 +12,9 @@ return new class extends Migration {
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->string('review');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('dish_id')->constrained()->cascadeOnDelete();
+            $table->string('comment')->nullable();
             $table->integer('rating');
             $table->timestamps();
         });

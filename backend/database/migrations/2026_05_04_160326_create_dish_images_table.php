@@ -12,7 +12,8 @@ return new class extends Migration {
     {
         Schema::create('dish_images', function (Blueprint $table) {
             $table->id();
-            $table->string('image');
+            $table->foreignId('dish_id')->constrained()->cascadeOnDelete();
+            $table->string('url')->nullable();
             $table->timestamps();
         });
     }

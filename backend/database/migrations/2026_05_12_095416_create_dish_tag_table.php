@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('dish_tag', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('dish_id');
-            $table->foreignId('tag_id');
+            $table->foreignId('dish_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('tag_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['dish_id', 'tag_id']);
