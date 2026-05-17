@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\FeedbackController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -76,6 +77,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/tables/{id}', [TableController::class, 'destroy']);
         // Route::patch('/tables/{id}/availability', [TableController::class, 'changeAvailablity']);
     });
+});
 
+// ADMIN ONLY-----------------------------------------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('role:admin')->group(function () {
 
+        //----FEEDBACKS (AI Analysis)------------------------------------
+        Route::get('/feedbacks', [FeedbackController::class, 'index']);
+        Route::get('/feedbacks/{id}', [FeedbackController::class, 'show']);
+    });
 });
