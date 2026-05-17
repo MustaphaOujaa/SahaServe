@@ -7,9 +7,11 @@ MODEL_NAME = "deepseek/deepseek-chat"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-def analyze_review_with_openrouter(text):
+def analyze_review_with_openrouter(reviews):
+    reviews_json_str = json.dumps(reviews, indent=2)
     prompt = f"""
-    Analyze the following restaurant review and return ONLY a valid JSON object with no extra text.
+    Analyze the following batch of restaurant reviews and return ONLY a valid JSON object with no extra text.
+    The JSON should represent the aggregated analysis of all the reviews provided.
 
     JSON Schema:
     {{
@@ -23,26 +25,26 @@ def analyze_review_with_openrouter(text):
         "cleanliness": "positive | negative | neutral | N/A"
       }},
       "key_points": ["<phrase 1>", "<phrase 2>"],
-      "main_issue": "<short description of the primary complaint, or null>",
+      "main_issue": "<short description of the most common complaint, or null>",
       "category": "<restaurant type>",
       "business_insight": {{
-        "main_problem": "<root cause identification>",
-        "recommendation": "<actionable advice for the owner>"
+        "main_problem": "<root cause identification if any>",
+        "recommendation": "<actionable advice for the owner based on the batch>"
       }},
-      "severity_score": <float 0.0-10.0 representing how critical the issues are, where 10 is most severe>
+      "severity_score": <float 0.0-10.0 representing how critical the issues are>
     }}
 
-    Review Text:
+    Reviews Batch:
     ---
-    {text}
+    {reviews_json_str}
     ---
     """
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://sahaserve.app",   # optional but recommended by OpenRouter
-        "X-Title": "SahaServe Review Analysis",    # optional label shown in OpenRouter dashboard
+        "HTTP-Referer": "https://sahaserve.app",   
+        "X-Title": "SahaServe Review Analysis",    
     }
 
     payload = {
@@ -75,7 +77,6 @@ def analyze_review_with_openrouter(text):
         if not raw_content:
             return {"error": "Empty response from AI service"}
 
-        # Clean response text in case of unexpected markdown wrappers
         text_response = raw_content.strip()
         if text_response.startswith("```json"):
             text_response = re.sub(r"^```json\n?|\n?```$", "", text_response).strip()
