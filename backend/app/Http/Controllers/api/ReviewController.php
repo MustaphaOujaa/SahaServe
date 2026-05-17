@@ -15,7 +15,7 @@ class ReviewController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string',
         ]);
-        
+
         $validated['user_id'] = $request->user()->id;
 
         // Ensure user hasn't reviewed this dish already
@@ -31,7 +31,8 @@ class ReviewController extends Controller
     public function destroy(Request $request, $id)
     {
         $review = Review::find($id);
-        if (!$review) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$review)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         if ($review->user_id !== $request->user()->id && !$request->user()->can('manage-reviews')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);

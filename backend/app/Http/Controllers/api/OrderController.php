@@ -24,7 +24,8 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::with(['user', 'items.dish'])->find($id);
-        if (!$order) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$order)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -39,11 +40,11 @@ class OrderController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             $totalPrice = 0;
             foreach ($cart->items as $item) {
                 // assume dish price
-                if($item->dish) {
+                if ($item->dish) {
                     $totalPrice += $item->dish->price * $item->quantity;
                 }
             }
@@ -55,7 +56,7 @@ class OrderController extends Controller
             ]);
 
             foreach ($cart->items as $item) {
-                if($item->dish) {
+                if ($item->dish) {
                     OrderItem::create([
                         'order_id' => $order->id,
                         'dish_id' => $item->dish_id,
@@ -78,7 +79,8 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $order = Order::find($id);
-        if (!$order) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$order)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $validated = $request->validate([
             'status' => 'required|string|in:pending,confirmed,preparing,delivered,cancelled'

@@ -28,10 +28,10 @@ class CartController extends Controller
         ]);
 
         $cart = $this->getCart($request->user());
-        
+
         $item = CartItem::where('cart_id', $cart->id)
-                        ->where('dish_id', $validated['dish_id'])
-                        ->first();
+            ->where('dish_id', $validated['dish_id'])
+            ->first();
 
         if ($item) {
             $item->quantity += $validated['quantity'];
@@ -54,7 +54,8 @@ class CartController extends Controller
         ]);
 
         $item = CartItem::find($id);
-        if (!$item) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$item)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         if ($item->cart->user_id !== $request->user()->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
@@ -74,7 +75,8 @@ class CartController extends Controller
     public function destroy(Request $request, $id)
     {
         $item = CartItem::find($id);
-        if (!$item) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$item)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         if ($item->cart->user_id !== $request->user()->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);

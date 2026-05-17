@@ -34,7 +34,7 @@ class FavoriteController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         // Use syncWithoutDetaching to avoid duplicates
         $user->favoriteDishes()->syncWithoutDetaching([$request->dish_id]);
 
@@ -50,7 +50,7 @@ class FavoriteController extends Controller
     public function destroy(Request $request, $dishId)
     {
         $user = $request->user();
-        
+
         $detached = $user->favoriteDishes()->detach($dishId);
 
         if ($detached) {

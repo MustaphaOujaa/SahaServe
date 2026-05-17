@@ -16,7 +16,8 @@ class DishController extends Controller
     public function show($id)
     {
         $dish = Dish::with(['category', 'images', 'reviews.user', 'tags'])->find($id);
-        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$dish)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
         return response()->json(['success' => true, 'data' => $dish]);
     }
 
@@ -29,9 +30,9 @@ class DishController extends Controller
             'price' => 'required|numeric|min:0',
             'is_available' => 'boolean',
         ]);
-        
+
         if (!isset($validated['is_available'])) {
-             $validated['is_available'] = true;
+            $validated['is_available'] = true;
         }
 
         $dish = Dish::create($validated);
@@ -41,7 +42,8 @@ class DishController extends Controller
     public function update(Request $request, $id)
     {
         $dish = Dish::find($id);
-        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$dish)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $validated = $request->validate([
             'category_id' => 'sometimes|exists:categories,id',
@@ -57,7 +59,8 @@ class DishController extends Controller
     public function destroy($id)
     {
         $dish = Dish::find($id);
-        if (!$dish) return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        if (!$dish)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
         $dish->delete();
         return response()->json(['success' => true, 'message' => 'Deleted successfully']);
     }
