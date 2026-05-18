@@ -6,7 +6,8 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\FavoriteController;
-use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\AI\FeedbackController;
+use App\Http\Controllers\AI\DishAssistantController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -23,6 +24,10 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 
 //tags
 Route::get('/tags', [TagController::class, 'index']);
+
+//dish assistant filtering
+Route::get('/ai/dishes/filter', [DishAssistantController::class, 'filter']);
+Route::post('/ai/assistant/chat', [DishAssistantController::class, 'chat']);
 
 
 #PROTECTED ROUTES --> USER ONLY ----------------------------------
