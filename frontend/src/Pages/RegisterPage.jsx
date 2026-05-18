@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
   const [step, setStep] = useState(1);
@@ -18,7 +20,10 @@ const RegisterPage = () => {
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: 'Enter a password to check strength', color: '' });
   const [isSuccess, setIsSuccess] = useState(false);
   const [shake, setShake] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const { sendOtp, register } = useAuth();
+  const navigate = useNavigate();
   const otpRefs = useRef([]);
 
   useEffect(() => {
@@ -90,13 +95,40 @@ const RegisterPage = () => {
     }
   };
 
-  const goStep2 = () => {
+  const goStep2 = async () => {
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
+      toast.error('Please fill in all required fields.');
       triggerShake();
       return;
     }
-    setStep(2);
-    setCountdown(60);
+
+    if (formData.name.length < 3) {
+      toast.error('Name must be at least 3 characters.');
+      triggerShake();
+      return;
+    }
+
+    // Phone number digit validation (digits:10)
+    const normalizedPhone = formData.phone.replace(/\D/g, '');
+    if (normalizedPhone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits.');
+      triggerShake();
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await sendOtp({
+      ...formData,
+      phone: normalizedPhone
+    });
+    setIsLoading(false);
+
+    if (result.success) {
+      setStep(2);
+      setCountdown(60);
+    } else {
+      triggerShake();
+    }
   };
 
   const triggerShake = () => {
@@ -104,19 +136,59 @@ const RegisterPage = () => {
     setTimeout(() => setShake(false), 400);
   };
 
-  const submitForm = () => {
+  const submitForm = async () => {
     const otpString = formData.otp.join('');
-    if (otpString.length < 6 || !formData.password || formData.password !== formData.confirmPassword) {
+    if (otpString.length < 6) {
+      toast.error('Please enter the full 6-digit OTP code.');
       triggerShake();
       return;
     }
-    setIsSuccess(true);
+
+    if (!formData.password) {
+      toast.error('Please enter a password.');
+      triggerShake();
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match.');
+      triggerShake();
+      return;
+    }
+
+    setIsLoading(true);
+    const normalizedPhone = formData.phone.replace(/\D/g, '');
+    const result = await register({
+      ...formData,
+      phone: normalizedPhone
+    }, otpString);
+    setIsLoading(false);
+
+    if (result.success) {
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } else {
+      triggerShake();
+    }
   };
 
-  const resendOTP = () => {
+  const resendOTP = async () => {
+    if (countdown > 0) return;
     setFormData((prev) => ({ ...prev, otp: ['', '', '', '', '', ''] }));
-    setCountdown(60);
-    otpRefs.current[0].focus();
+    setIsLoading(true);
+    const normalizedPhone = formData.phone.replace(/\D/g, '');
+    const result = await sendOtp({
+      ...formData,
+      phone: normalizedPhone
+    });
+    setIsLoading(false);
+    
+    if (result.success) {
+      setCountdown(60);
+      otpRefs.current[0].focus();
+    }
   };
 
   return (
@@ -208,7 +280,7 @@ const RegisterPage = () => {
                       <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Phone Number <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-phone absolute left-4 text-gold text-[0.85rem]"></i>
-                        <input type="tel" id="inp-phone" value={formData.phone} onChange={handleInputChange} placeholder="+212 6XX XXX XXX" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
+                        <input type="tel" id="inp-phone" value={formData.phone} onChange={handleInputChange} placeholder="e.g. 0612345678" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -221,8 +293,12 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="mt-7 flex flex-col gap-[0.9rem]">
-                    <button className="w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] transition-all flex items-center justify-center gap-2" onClick={goStep2}>
-                      Continue <i className="fas fa-arrow-right text-[0.8rem]"></i>
+                    <button disabled={isLoading} className="w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] transition-all flex items-center justify-center gap-2 disabled:opacity-80" onClick={goStep2}>
+                      {isLoading ? (
+                        <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
+                      ) : (
+                        <>Continue <i className="fas fa-arrow-right text-[0.8rem]"></i></>
+                      )}
                     </button>
                   </div>
 
@@ -237,13 +313,13 @@ const RegisterPage = () => {
                     <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Step 2 of 2</span>
                     <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark leading-[1.2] mb-1">Verify & <em className="text-gold italic not-italic">Secure</em></h2>
                     <div className="w-9 h-[3px] bg-gold rounded-[2px] my-3"></div>
-                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">Enter the OTP sent to your phone and set a strong password.</p>
+                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">Enter the OTP sent to your email and set a strong password.</p>
                   </div>
 
                   <div className="flex flex-col gap-[1.1rem]">
                     <div className="bg-gold-pale border border-[rgba(200,146,42,0.3)] rounded-xl p-3 flex items-start gap-[0.65rem] mb-2">
                       <i className="fas fa-shield-alt text-gold text-[0.85rem] mt-[0.1rem]"></i>
-                      <p className="text-[0.8rem] text-brown-mid leading-[1.55]">A 6-digit code has been sent to <strong className="text-brown-dark">{formData.phone}</strong>. Please enter it below to verify your identity.</p>
+                      <p className="text-[0.8rem] text-brown-mid leading-[1.55]">A 6-digit code has been sent to <strong className="text-brown-dark">{formData.email}</strong>. Please enter it below to verify your identity.</p>
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -264,7 +340,7 @@ const RegisterPage = () => {
                         ))}
                       </div>
                       <div className="text-center text-[0.78rem] text-text-mid mt-2">
-                        Didn't receive it? <span className="text-gold font-medium underline cursor-pointer" onClick={resendOTP}>Resend OTP</span> {countdown > 0 && `(${countdown}s)`}
+                        Didn't receive it? <span className="text-gold font-medium underline cursor-pointer" onClick={resendOTP}>Resend OTP</span> {countdown > 0 ? `(${countdown}s)` : ''}
                       </div>
                     </div>
 
@@ -272,7 +348,7 @@ const RegisterPage = () => {
                       <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Password <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-lock absolute left-4 text-gold text-[0.85rem]"></i>
-                        <input type={showPassword ? "text" : "password"} id="inp-pw" value={formData.password} onChange={handleInputChange} placeholder="Min. 8 characters" className="w-full pl-11 pr-11 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
+                        <input type={showPassword ? "text" : "password"} id="inp-pw" value={formData.password} onChange={handleInputChange} placeholder="Min. 6 characters" className="w-full pl-11 pr-11 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
                         <button type="button" className="absolute right-4 text-text-mid hover:text-gold transition-colors" onClick={() => setShowPassword(!showPassword)}>
                           <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
@@ -303,10 +379,14 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="mt-7 flex flex-col gap-[0.9rem]">
-                    <button className="w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] transition-all flex items-center justify-center gap-2" onClick={submitForm}>
-                      <i className="fas fa-check-circle text-[0.9rem]"></i> Create My Account
+                    <button disabled={isLoading} className="w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] transition-all flex items-center justify-center gap-2 disabled:opacity-80" onClick={submitForm}>
+                      {isLoading ? (
+                        <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
+                      ) : (
+                        <><i className="fas fa-check-circle text-[0.9rem]"></i> Create My Account</>
+                      )}
                     </button>
-                    <button className="w-full py-[0.95rem] px-6 rounded-[50px] bg-transparent border-[1.5px] border-beige text-text-mid text-[0.95rem] font-semibold hover:border-gold hover:text-gold hover:bg-gold-pale transition-all flex items-center justify-center gap-2" onClick={() => setStep(1)}>
+                    <button type="button" className="w-full py-[0.95rem] px-6 rounded-[50px] bg-transparent border-[1.5px] border-beige text-text-mid text-[0.95rem] font-semibold hover:border-gold hover:text-gold hover:bg-gold-pale transition-all flex items-center justify-center gap-2" onClick={() => setStep(1)}>
                       <i className="fas fa-arrow-left text-[0.8rem]"></i> Back to Step 1
                     </button>
                   </div>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
@@ -9,6 +11,37 @@ const LoginPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [shake, setShake] = useState(false);
+
+  // Forgot password states
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+
+  const { login, loginWithToken, forgotPassword } = useAuth();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Check if token exists in URL query string (for Google OAuth callback)
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    
+    if (tokenParam) {
+      const handleTokenLogin = async () => {
+        setIsLoading(true);
+        const result = await loginWithToken(tokenParam);
+        setIsLoading(false);
+        if (result.success) {
+          setIsSuccess(true);
+          setTimeout(() => {
+            navigate('/');
+          }, 1500);
+        } else {
+          setError(result.error || 'Google authentication failed');
+          triggerShake();
+        }
+      };
+      handleTokenLogin();
+    }
+  }, [navigate, loginWithToken]);
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -24,7 +57,7 @@ const LoginPage = () => {
     setTimeout(() => setShake(false), 400);
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password.');
@@ -33,11 +66,40 @@ const LoginPage = () => {
     }
     
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setError('');
+
+    const result = await login(formData.email, formData.password, formData.rememberMe);
+    setIsLoading(false);
+    
+    if (result.success) {
       setIsSuccess(true);
-    }, 1500);
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } else {
+      setError(result.error || 'Invalid credentials');
+      triggerShake();
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    // Redirect user to google auth page on laravel backend
+    window.location.href = 'http://localhost:8000/api/auth/google';
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    setIsForgotLoading(true);
+    const result = await forgotPassword(forgotEmail);
+    setIsForgotLoading(false);
+    if (result.success) {
+      setIsForgotModalOpen(false);
+      setForgotEmail('');
+    }
   };
 
   return (
@@ -70,7 +132,7 @@ const LoginPage = () => {
               <img src="https://i.pravatar.cc/80?img=12" className="w-9 h-9 rounded-full object-cover border-2 border-gold" alt="Avatar" />
               <div>
                 <div className="text-[0.82rem] font-semibold text-white">Karim Bennani</div>
-                <div className="text-[0.72rem] text-[rgba(255,255,255,0.4)]">Casablanca, Morocco</div>
+                <div className="text-[0.72rem] text-[rgba(255,255,255,0.455)]">Casablanca, Morocco</div>
               </div>
             </div>
           </div>
@@ -106,10 +168,10 @@ const LoginPage = () => {
               </div>
 
               <div className="flex flex-col gap-3 mb-6">
-                <button className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all">
+                <button type="button" onClick={handleGoogleLogin} className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all">
                   <i className="fab fa-google text-[#db4437]"></i> Continue with Google
                 </button>
-                <button className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all">
+                <button type="button" className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all opacity-60 cursor-not-allowed">
                   <i className="fab fa-facebook-f text-[#1877f2]"></i> Continue with Facebook
                 </button>
               </div>
@@ -159,7 +221,7 @@ const LoginPage = () => {
                   </label>
                 </div>
 
-                <button type="submit" className={`w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 ${isLoading ? 'opacity-80 cursor-not-allowed' : ''}`}>
+                <button type="submit" disabled={isLoading} className={`w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] hover:shadow-[0_10px_28px_rgba(200,146,42,0.45)] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 ${isLoading ? 'opacity-80 cursor-not-allowed' : ''}`}>
                   {isLoading ? (
                     <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
                   ) : (
@@ -192,26 +254,30 @@ const LoginPage = () => {
       {/* Forgot Password Modal */}
       {isForgotModalOpen && (
         <div className="fixed inset-0 z-[2000] bg-[rgba(26,15,0,0.55)] backdrop-blur-[6px] flex items-center justify-center animate-[fadeOverlay_0.25s_ease]">
-          <div className="bg-white rounded-[24px] p-10 w-full max-w-[400px] mx-4 shadow-custom-lg animate-[slideModal_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)_both] relative">
-            <button className="absolute top-[1.2rem] right-[1.2rem] w-8 h-8 rounded-full bg-cream text-text-mid flex items-center justify-center text-[0.85rem] hover:bg-gold-pale hover:text-gold transition-all" onClick={() => setIsForgotModalOpen(false)}>
+          <form onSubmit={handleForgotPasswordSubmit} className="bg-white rounded-[24px] p-10 w-full max-w-[400px] mx-4 shadow-custom-lg animate-[slideModal_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)_both] relative">
+            <button type="button" className="absolute top-[1.2rem] right-[1.2rem] w-8 h-8 rounded-full bg-cream text-text-mid flex items-center justify-center text-[0.85rem] hover:bg-gold-pale hover:text-gold transition-all" onClick={() => setIsForgotModalOpen(false)}>
               <i className="fas fa-times"></i>
             </button>
             <div className="w-14 h-14 rounded-2xl bg-gold-pale text-gold flex items-center justify-center text-[1.3rem] mb-[1.2rem]">
               <i className="fas fa-key"></i>
             </div>
             <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-brown-dark mb-[0.4rem]">Forgot Password?</h3>
-            <p className="text-[0.85rem] text-text-mid leading-[1.65] mb-[1.5rem]">No worries! Enter your email address and we'll send you a link to reset your password.</p>
+            <p className="text-[0.85rem] text-text-mid leading-[1.65] mb-[1.5rem]">No worries! Enter your email address and we'll send you a verification code to reset your password.</p>
             <div className="flex flex-col gap-1 mb-[1.2rem]">
               <label className="text-[0.8rem] font-medium text-brown-mid mb-1">Email Address</label>
               <div className="relative flex items-center">
                 <i className="fas fa-envelope absolute left-4 text-gold text-[0.85rem]"></i>
-                <input type="email" placeholder="you@example.com" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
+                <input required type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
               </div>
             </div>
-            <button className="w-full py-[0.85rem] rounded-[50px] bg-gold text-white font-semibold text-[0.9rem] shadow-[0_4px_16px_rgba(200,146,42,0.35)] hover:bg-brown hover:-translate-y-[1px] transition-all">
-              Send Reset Link
+            <button type="submit" disabled={isForgotLoading} className="w-full py-[0.85rem] rounded-[50px] bg-gold text-white font-semibold text-[0.9rem] shadow-[0_4px_16px_rgba(200,146,42,0.35)] hover:bg-brown hover:-translate-y-[1px] transition-all flex items-center justify-center gap-2">
+              {isForgotLoading ? (
+                <div className="w-4 h-4 rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
+              ) : (
+                'Send Verification Code'
+              )}
             </button>
-          </div>
+          </form>
         </div>
       )}
 
