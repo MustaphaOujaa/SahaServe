@@ -25,7 +25,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage-users',
             'manage-tags',
             'make-reservation',
-            'make-order'
+            'make-order',
+            'mark-ready'
         ];
 
         foreach ($permissions as $permission) {

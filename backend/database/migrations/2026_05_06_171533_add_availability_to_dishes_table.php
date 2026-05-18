@@ -10,9 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('dishes', function (Blueprint $table) {
-            $table->boolean("is_available")->default("true");
-        });
+        if (!Schema::hasColumn('dishes', 'is_available')) {
+            Schema::table('dishes', function (Blueprint $table) {
+                $table->boolean("is_available")->default(true);
+            });
+        }
     }
 
     /**
@@ -20,8 +22,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('diches', function (Blueprint $table) {
-            $table->dropColumn("is_available");
-        });
+        if (Schema::hasColumn('dishes', 'is_available')) {
+            Schema::table('dishes', function (Blueprint $table) {
+                $table->dropColumn("is_available");
+            });
+        }
     }
 };
