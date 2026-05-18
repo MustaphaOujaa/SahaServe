@@ -34,21 +34,15 @@ class AuthController extends Controller
             $user->assignRole('client');
 
         } else {
-
-            if (!$user->google_id) {
-
-                $user->update([
-                    'google_id' => $googleUser->id,
-                    'avatar' => $googleUser->avatar,
-                ]);
-            }
+            $user->update([
+                'google_id' => $googleUser->id,
+                'avatar' => $googleUser->avatar,
+            ]);
         }
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        return redirect()->away($frontendUrl . '/login?token=' . $token);
     }
     //redirect user to google auth page
     public function redirectToGoogle()
@@ -332,7 +326,8 @@ class AuthController extends Controller
             'email',
             'adress',
             'phone_number',
-            'image'
+            'image',
+            'avatar'
         )
             ->where('id', $user->id)->first();
 
