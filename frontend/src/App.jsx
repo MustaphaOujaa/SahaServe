@@ -5,6 +5,7 @@ import Footer from './Components/Partials/Footer';
 import HomePage from './Pages/HomePage';
 import RegisterPage from './Pages/RegisterPage';
 import LoginPage from './Pages/LoginPage';
+import Soa from './Components/Soa';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -39,6 +40,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
           </Routes>
           <Footer />
+          <Soa />
         </div>
       </Router>
     </AuthProvider>

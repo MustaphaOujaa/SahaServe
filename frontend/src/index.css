@@ -229,3 +229,11 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Scrollbar utilities */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
