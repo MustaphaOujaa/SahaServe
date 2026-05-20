@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import DishCard from '../Components/DishCard';
 
 const HomePage = () => {
+  const sliderRef = useRef(null);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -109,52 +111,56 @@ const HomePage = () => {
         </div>
         
         <div className="relative fade-in">
-          <div className="overflow-hidden">
-            <div className="flex gap-6 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" id="testiSlider">
-              {[
-                {
-                  stars: "★★★★★",
-                  text: '"An unforgettable journey through Moroccan flavours. The tagine was perfectly spiced — I felt transported to a Marrakech riad."',
-                  name: "Sofia Larsson",
-                  location: "Stockholm, Sweden",
-                  avatar: "https://i.pravatar.cc/80?img=47"
-                },
-                {
-                  stars: "★★★★★",
-                  text: '"The ambiance, the service, the food — all exceptional. The bastilla is unlike anything I\'ve had outside of Morocco. Truly extraordinary."',
-                  name: "James Whitmore",
-                  location: "London, UK",
-                  avatar: "https://i.pravatar.cc/80?img=33"
-                },
-                {
-                  stars: "★★★★☆",
-                  text: '"I used the AI assistant to pick my meal and it nailed my preferences perfectly. The couscous was generous and beautifully presented."',
-                  name: "Amara Diallo",
-                  location: "Paris, France",
-                  avatar: "https://i.pravatar.cc/80?img=5"
-                }
-              ].map((t, i) => (
-                <div key={i} className="min-w-[85%] md:min-w-[calc(33.33%-1rem)] bg-[rgba(255,255,255,0.06)] border border-[rgba(200,146,42,0.2)] rounded-[20px] p-8 transition-colors hover:bg-[rgba(255,255,255,0.1)]">
-                  <div className="text-gold text-[0.95rem] mb-4 tracking-[0.1em]">{t.stars}</div>
-                  <p className="font-['Cormorant_Garamond'] italic text-[1.1rem] leading-[1.75] text-[rgba(255,255,255,0.85)] mb-6">
-                    {t.text}
-                  </p>
-                  <div className="flex items-center gap-[0.9rem]">
-                    <img src={t.avatar} className="w-11 h-11 rounded-full object-cover border-2 border-gold" alt={t.name} />
-                    <div>
-                      <div className="font-semibold text-white text-[0.9rem]">{t.name}</div>
-                      <div className="text-[0.78rem] text-[rgba(255,255,255,0.45)]">{t.location}</div>
-                    </div>
+          <div ref={sliderRef} className="overflow-x-auto scrollbar-none flex gap-6 scroll-smooth snap-x snap-mandatory" id="testiSlider">
+            {[
+              {
+                stars: "★★★★★",
+                text: '"An unforgettable journey through Moroccan flavours. The tagine was perfectly spiced — I felt transported to a Marrakech riad."',
+                name: "Sofia Larsson",
+                location: "Stockholm, Sweden",
+                avatar: "https://i.pravatar.cc/80?img=47"
+              },
+              {
+                stars: "★★★★★",
+                text: '"The ambiance, the service, the food — all exceptional. The bastilla is unlike anything I\'ve had outside of Morocco. Truly extraordinary."',
+                name: "James Whitmore",
+                location: "London, UK",
+                avatar: "https://i.pravatar.cc/80?img=33"
+              },
+              {
+                stars: "★★★★☆",
+                text: '"I used the AI assistant to pick my meal and it nailed my preferences perfectly. The couscous was generous and beautifully presented."',
+                name: "Amara Diallo",
+                location: "Paris, France",
+                avatar: "https://i.pravatar.cc/80?img=5"
+              }
+            ].map((t, i) => (
+              <div key={i} className="min-w-[85%] md:min-w-[calc(33.33%-1rem)] snap-start shrink-0 bg-[rgba(255,255,255,0.06)] border border-[rgba(200,146,42,0.2)] rounded-[20px] p-8 transition-colors hover:bg-[rgba(255,255,255,0.1)]">
+                <div className="text-gold text-[0.95rem] mb-4 tracking-[0.1em]">{t.stars}</div>
+                <p className="font-['Cormorant_Garamond'] italic text-[1.1rem] leading-[1.75] text-[rgba(255,255,255,0.85)] mb-6">
+                  {t.text}
+                </p>
+                <div className="flex items-center gap-[0.9rem]">
+                  <img src={t.avatar} className="w-11 h-11 rounded-full object-cover border-2 border-gold" alt={t.name} />
+                  <div>
+                    <div className="font-semibold text-white text-[0.9rem]">{t.name}</div>
+                    <div className="text-[0.78rem] text-[rgba(255,255,255,0.45)]">{t.location}</div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
           <div className="flex gap-3 mt-8 items-center">
-            <button className="w-11 h-11 rounded-full border-[1.5px] border-[rgba(200,146,42,0.4)] bg-transparent text-gold cursor-pointer transition-all flex items-center justify-center hover:bg-gold hover:border-gold hover:text-white">
+            <button 
+              onClick={() => sliderRef.current?.scrollBy({ left: -sliderRef.current.offsetWidth * 0.8, behavior: 'smooth' })}
+              className="w-11 h-11 rounded-full border-[1.5px] border-[rgba(200,146,42,0.4)] bg-transparent text-gold cursor-pointer transition-all flex items-center justify-center hover:bg-gold hover:border-gold hover:text-white"
+            >
               <i className="fas fa-arrow-left text-base"></i>
             </button>
-            <button className="w-11 h-11 rounded-full border-[1.5px] border-[rgba(200,146,42,0.4)] bg-transparent text-gold cursor-pointer transition-all flex items-center justify-center hover:bg-gold hover:border-gold hover:text-white">
+            <button 
+              onClick={() => sliderRef.current?.scrollBy({ left: sliderRef.current.offsetWidth * 0.8, behavior: 'smooth' })}
+              className="w-11 h-11 rounded-full border-[1.5px] border-[rgba(200,146,42,0.4)] bg-transparent text-gold cursor-pointer transition-all flex items-center justify-center hover:bg-gold hover:border-gold hover:text-white"
+            >
               <i className="fas fa-arrow-right text-base"></i>
             </button>
             <div className="flex gap-[0.4rem]">
