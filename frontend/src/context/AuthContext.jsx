@@ -90,6 +90,12 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common['Authorization'];
   };
 
+  const hasRole = (roleName) => {
+    return user?.roles?.some((role) => role.name === roleName) || false;
+  };
+
+  const isAdmin = () => hasRole('admin');
+
   // Login with token (useful for OAuth callbacks like Google)
   const loginWithToken = async (authToken) => {
     try {
@@ -264,6 +270,8 @@ export const AuthProvider = ({ children }) => {
         register,
         forgotPassword,
         resetPassword,
+        hasRole,
+        isAdmin,
       }}
     >
       {children}

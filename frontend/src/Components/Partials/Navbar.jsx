@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ButtonSpinner } from '../UI/Loading';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -43,6 +45,13 @@ const Navbar = () => {
   };
 
   const avatarUrl = getAvatarUrl();
+  const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    setIsLoggingOut(false);
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-[5%] transition-all duration-300 ${
@@ -65,7 +74,7 @@ const Navbar = () => {
             <li><Link to="/contact" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Contact</Link></li>
           </ul>
           <div className="flex gap-[0.7rem] items-center">
-            {user && (
+            {user && !isAdmin && (
               <div className="hidden md:flex gap-[0.7rem]">
                 <Link to="/notifications" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
                   <i className="fas fa-bell"></i>
@@ -98,12 +107,12 @@ const Navbar = () => {
                   <i className="fas fa-chevron-down text-[0.5rem] opacity-70"></i>
                 </button>
                 <div className={`absolute top-[100%] right-0 w-[200px] bg-white rounded-custom-sm shadow-custom-lg border border-[rgba(200,146,42,0.1)] p-3 flex flex-col gap-1 transition-all duration-300 z-[1001] mt-[10px] ${accountMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-[10px]'}`}>
-                  <Link to="/profile" className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
-                    <i className="fas fa-user-circle text-gold w-[18px]"></i> Client Profile
+                  <Link to={isAdmin ? "/admin-dashboard" : "/profile"} className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
+                    <i className={`fas ${isAdmin ? 'fa-chart-line' : 'fa-user-circle'} text-gold w-[18px]`}></i> {isAdmin ? 'Admin Dashboard' : 'Client Profile'}
                   </Link>
                   <div className="h-[1px] bg-[rgba(200,146,42,0.1)] my-[0.4rem]"></div>
-                  <button onClick={logout} className="w-full flex items-center gap-3 p-[0.65rem] rounded-[10px] text-[rgba(231,76,60,0.9)] text-[0.85rem] font-medium hover:bg-[rgba(231,76,60,0.08)] hover:text-[#c0392b] transition-all text-left border-none bg-transparent cursor-pointer">
-                    <i className="fas fa-sign-out-alt w-[18px]"></i> Sign Out
+                  <button onClick={handleLogout} disabled={isLoggingOut} className="w-full flex items-center gap-3 p-[0.65rem] rounded-[10px] text-[rgba(231,76,60,0.9)] text-[0.85rem] font-medium hover:bg-[rgba(231,76,60,0.08)] hover:text-[#c0392b] transition-all text-left border-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
+                    {isLoggingOut ? <ButtonSpinner /> : <i className="fas fa-sign-out-alt w-[18px]"></i>} {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </button>
                 </div>
               </div>
@@ -137,7 +146,7 @@ const Navbar = () => {
       {/* Responsive mobile drawer dropdown */}
       {!isAuthPage && mobileMenuOpen && (
         <div className="md:hidden absolute top-[100%] left-0 right-0 bg-[rgba(250,245,236,0.98)] backdrop-blur-[24px] border-b border-gold/20 shadow-custom-lg p-6 flex flex-col gap-4 z-[999] animate-[fadeUp_0.25s_ease_both]">
-          {user && (
+          {user && !isAdmin && (
             <div className="flex gap-2 mb-4">
               <Link to="/notifications" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
                 <i className="fas fa-bell"></i>

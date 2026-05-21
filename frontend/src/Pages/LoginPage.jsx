@@ -19,6 +19,10 @@ const LoginPage = () => {
   const { login, loginWithToken, forgotPassword } = useAuth();
   const navigate = useNavigate();
 
+  const getPostLoginPath = (user) => {
+    return user?.roles?.some((role) => role.name === 'admin') ? '/admin-dashboard' : '/';
+  };
+
   React.useEffect(() => {
     // Check if token exists in URL query string (for Google OAuth callback)
     const params = new URLSearchParams(window.location.search);
@@ -32,7 +36,7 @@ const LoginPage = () => {
         if (result.success) {
           setIsSuccess(true);
           setTimeout(() => {
-            navigate('/');
+            navigate(getPostLoginPath(result.user), { replace: true });
           }, 1500);
         } else {
           setError(result.error || 'Google authentication failed');
@@ -74,7 +78,7 @@ const LoginPage = () => {
     if (result.success) {
       setIsSuccess(true);
       setTimeout(() => {
-        navigate('/');
+        navigate(getPostLoginPath(result.user), { replace: true });
       }, 1500);
     } else {
       setError(result.error || 'Invalid credentials');
