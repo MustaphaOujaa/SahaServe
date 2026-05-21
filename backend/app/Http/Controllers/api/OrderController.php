@@ -89,4 +89,34 @@ class OrderController extends Controller
         $order->update(['status' => $validated['status']]);
         return response()->json(['success' => true, 'data' => $order]);
     }
+
+    public function markReady($id)
+    {
+        $order = Order::find($id);
+        if (!$order)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+
+        $order->update(['status' => 'confirmed']);
+        return response()->json(['success' => true, 'data' => $order]);
+    }
+
+    public function takeDelivery($id)
+    {
+        $order = Order::find($id);
+        if (!$order)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+
+        $order->update(['status' => 'preparing']);
+        return response()->json(['success' => true, 'data' => $order]);
+    }
+
+    public function markDelivered($id)
+    {
+        $order = Order::find($id);
+        if (!$order)
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+
+        $order->update(['status' => 'delivered']);
+        return response()->json(['success' => true, 'data' => $order]);
+    }
 }

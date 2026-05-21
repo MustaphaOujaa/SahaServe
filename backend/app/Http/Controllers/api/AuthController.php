@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -308,12 +310,66 @@ class AuthController extends Controller
     //get all users
     public function getAllUsers()
     {
-        $users = User::select('id', 'name', 'email', 'adress', 'phone_number', 'image')->latest()->paginate(10);
+        $users = User::select('id', 'name', 'email', 'adress', 'phone_number', 'image', 'avatar', 'created_at')
+            ->with('roles:id,name')
+            ->latest()
+            ->paginate(10);
 
         return response()->json([
             'status' => 'success',
             'users' => $users
         ], 200);
+    }
+
+    public function updateUserRole(Request $request, $id)
+    {
+        $request->validate([
+            'role' => 'required|exists:roles,name'
+        ]);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->syncRoles([$request->role]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User role updated successfully',
+            'user' => $user->load('roles:id,name')
+        ]);
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User deleted successfully'
+        ]);
+    }
+
+    public function rolesAndPermissions()
+    {
+        return response()->json([
+            'status' => 'success',
+            'roles' => Role::with('permissions:id,name')->get(['id', 'name']),
+            'permissions' => Permission::get(['id', 'name'])
+        ]);
     }
     //get user profile 
     public function profile(Request $request)
