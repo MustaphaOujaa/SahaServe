@@ -12,6 +12,7 @@ class Reservation extends Model
         'reservation_date',
         'start_time',
         'end_time',
+        'guests_number',
         'status',
     ];
 

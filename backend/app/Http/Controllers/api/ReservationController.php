@@ -47,6 +47,7 @@ class ReservationController extends Controller
             'reservation_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
+            'guests_number' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -90,6 +91,7 @@ class ReservationController extends Controller
             'reservation_date' => $request->reservation_date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
+            'guests_number' => $request->guests_number,
             'status' => 'pending',
         ]);
 
@@ -139,6 +141,7 @@ class ReservationController extends Controller
             'reservation_date' => 'sometimes|date|after_or_equal:today',
             'start_time' => 'sometimes',
             'end_time' => 'sometimes|after:start_time',
+            'guests_number' => 'sometimes|nullable|integer|min:1',
         ];
 
         $validator = Validator::make($request->all(), $rules);

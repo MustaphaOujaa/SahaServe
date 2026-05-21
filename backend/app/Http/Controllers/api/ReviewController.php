@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
+    public function index()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => Review::with(['user:id,name,email', 'dish:id,name'])->latest()->paginate(10)
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
