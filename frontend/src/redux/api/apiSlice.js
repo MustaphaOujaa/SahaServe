@@ -23,8 +23,13 @@ export const apiSlice = createApi({
     updateProfile: builder.mutation({
       query: (data) => ({
         url: '/updateProfile',
-        method: 'PATCH',
-        body: data,
+        method: data instanceof FormData ? 'POST' : 'PATCH',
+        body: data instanceof FormData
+          ? (() => {
+              data.append('_method', 'PATCH');
+              return data;
+            })()
+          : data,
       }),
       invalidatesTags: ['Profile'],
     }),

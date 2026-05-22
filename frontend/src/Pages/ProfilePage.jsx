@@ -1,15 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useGetProfileQuery, useUpdateProfileMutation, useDeleteAccountMutation } from '../redux/api/apiSlice';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { PageLoader } from '../Components/UI/Loading';
+import imageCompression from 'browser-image-compression';
 
 const ProfilePage = () => {
   const [activeSection, setActiveSection] = useState('personal-info');
+  const [previewImage, setPreviewImage] = useState(null);
+  const fileInputRef = useRef(null);
   const { data: user, isLoading, isError } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation();
   const { logout } = useAuth();
+
+  const getAvatarUrl = () => {
+    if (!user) return null;
+    if (user.image && user.image !== 'null' && user.image !== '') {
+      return user.image.startsWith('http') 
+        ? user.image 
+        : `http://localhost:8000/storage/${user.image}`;
+    }
+    if (user.avatar && user.avatar !== 'null' && user.avatar !== '') {
+      return user.avatar;
+    }
+    return null;
+  };
+  const avatarUrl = previewImage || getAvatarUrl();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await logout();
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+
+    try {
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      
+      const formData = new FormData();
+      formData.append('image', compressedFile);
+
+      const updatePromise = updateProfile(formData).unwrap();
+      
+      toast.promise(updatePromise, {
+        loading: 'Updating profile image...',
+        success: 'Profile image updated successfully!',
+        error: (err) => err?.data?.message || 'Failed to update profile image',
+      });
+      
+    } catch (error) {
+      console.error('Error compressing or uploading image:', error);
+      toast.error('Failed to process image');
+      setPreviewImage(null);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -46,7 +103,7 @@ const ProfilePage = () => {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-cream pt-32 pb-20 px-[5%] flex justify-center items-center"><div className="w-12 h-12 border-4 border-gold border-t-transparent rounded-full animate-spin"></div></div>;
+    return <PageLoader label="Loading Profile..." />;
   }
 
   if (isError) {
@@ -237,9 +294,30 @@ const ProfilePage = () => {
         {/* Profile Header */}
         <section className="bg-white rounded-[24px] shadow-custom p-10 flex flex-wrap md:flex-nowrap items-center gap-10 mb-10 relative overflow-hidden animate-[fadeUp_0.4s_ease_both]">
           <div className="absolute top-0 right-0 w-[300px] h-full bg-[radial-gradient(circle_at_top_right,rgba(200,146,42,0.05),transparent)] pointer-events-none"></div>
-          <div className="relative shrink-0">
-            <img src={user?.avatar || user?.image || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"} alt="User Avatar" className="w-[120px] h-[120px] rounded-full border-4 border-gold-pale object-cover shadow-md" />
-            <button className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-gold text-white flex items-center justify-center border-2 border-white text-[0.8rem] hover:scale-110 transition-transform shadow-md">
+          <div className="relative shrink-0 group">
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="User Avatar" 
+                className="w-[120px] h-[120px] rounded-full border-4 border-gold-pale object-cover shadow-md transition-opacity group-hover:opacity-90 bg-white" 
+              />
+            ) : (
+              <div className="w-[120px] h-[120px] rounded-full border-4 border-gold-pale shadow-md transition-opacity group-hover:opacity-90 bg-cream flex items-center justify-center text-gold/60">
+                <i className="fas fa-user-circle text-[7.5rem]"></i>
+              </div>
+            )}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleImageUpload} 
+              accept="image/*" 
+              className="hidden" 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-gold text-white flex items-center justify-center border-2 border-white text-[0.8rem] hover:scale-110 transition-transform shadow-md cursor-pointer"
+              title="Update Profile Picture"
+            >
               <i className="fas fa-camera"></i>
             </button>
           </div>
@@ -269,9 +347,9 @@ const ProfilePage = () => {
                 {item.label}
               </button>
             ))}
-            <Link to="/" className="flex items-center gap-4 px-5 py-3.5 rounded-[12px] text-[0.95rem] font-medium text-[#e74c3c] hover:bg-[#fdf2f2] mt-4 transition-all">
+            <button onClick={handleLogout} className="flex items-center gap-4 px-5 py-3.5 rounded-[12px] text-[0.95rem] font-medium text-[#e74c3c] hover:bg-[#fdf2f2] mt-4 transition-all w-full text-left">
               <i className="fas fa-sign-out-alt w-5 text-[1.1rem]"></i> Logout
-            </Link>
+            </button>
           </aside>
 
           {/* Content Area */}
