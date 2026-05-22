@@ -13,6 +13,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
+import ShowDishPage from "./Pages/ShowDishPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import { PageLoader } from "./Components/UI/Loading";
@@ -90,6 +91,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/menu" element={<MenuPage />} />
+              <Route path="/dish/:id" element={<ShowDishPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/favourites" element={<AdminRedirect><FavouritesPage /></AdminRedirect>} />
               <Route path="/cart" element={<AdminRedirect><CartPage /></AdminRedirect>} />

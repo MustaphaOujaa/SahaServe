@@ -10,7 +10,8 @@ class TagController extends Controller
 {
     public function index()
     {
-        $tags = Tag::simplePaginate(10);
+        $perPage = min((int) request()->query('per_page', 10), 100);
+        $tags = Tag::simplePaginate($perPage);
 
         return response()->json([
             "status" => "success",
