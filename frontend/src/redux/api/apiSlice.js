@@ -143,6 +143,11 @@ export const apiSlice = createApi({
       providesTags: ['Dishes'],
       transformResponse: (response) => response.data,
     }),
+    getDish: builder.query({
+      query: (dishId) => `/dishes/${dishId}`,
+      providesTags: (_result, _error, dishId) => [{ type: 'Dishes', id: dishId }],
+      transformResponse: (response) => response.data,
+    }),
     createDish: builder.mutation({
       query: (data) => ({
         url: '/dishes',
@@ -205,7 +210,16 @@ export const apiSlice = createApi({
       invalidatesTags: ['Categories', 'Dishes'],
     }),
     getTags: builder.query({
-      query: (page = 1) => `/tags?page=${page}`,
+      query: (params = 1) => {
+        const queryParams = typeof params === 'object'
+          ? new URLSearchParams({
+              page: params.page || 1,
+              per_page: params.perPage || 10,
+            })
+          : new URLSearchParams({ page: params });
+
+        return `/tags?${queryParams.toString()}`;
+      },
       providesTags: ['Tags'],
       transformResponse: (response) => response.data,
     }),
@@ -255,6 +269,7 @@ export const {
   useUpdateTableMutation,
   useDeleteTableMutation,
   useGetDishesQuery,
+  useGetDishQuery,
   useCreateDishMutation,
   useUpdateDishMutation,
   useDeleteDishMutation,

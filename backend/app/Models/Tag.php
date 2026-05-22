@@ -9,6 +9,6 @@ class Tag extends Model
     protected $fillable = ["name"];
     public function dishes()
     {
-        $this->belongsToMany(Dish::class);
+        return $this->belongsToMany(Dish::class);
     }
 }

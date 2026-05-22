@@ -30,6 +30,10 @@ class DishController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_available' => 'boolean',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
@@ -39,9 +43,12 @@ class DishController extends Controller
         }
 
         $images = $request->file('images', []);
+        $tagIds = $validated['tag_ids'] ?? $validated['tags'] ?? [];
+        unset($validated['tag_ids'], $validated['tags']);
         unset($validated['images']);
 
         $dish = Dish::create($validated);
+        $dish->tags()->sync($tagIds);
 
         foreach ($images as $image) {
             $dish->images()->create([
@@ -64,14 +71,25 @@ class DishController extends Controller
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'is_available' => 'boolean',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $images = $request->file('images', []);
+        $shouldSyncTags = $request->has('tag_ids') || $request->has('tags');
+        $tagIds = $validated['tag_ids'] ?? $validated['tags'] ?? [];
+        unset($validated['tag_ids'], $validated['tags']);
         unset($validated['images']);
 
         $dish->update($validated);
+
+        if ($shouldSyncTags) {
+            $dish->tags()->sync($tagIds);
+        }
 
         if (count($images) > 0) {
             foreach ($dish->images as $dishImage) {
