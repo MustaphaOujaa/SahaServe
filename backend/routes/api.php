@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //----USERS HANDLING----
     Route::middleware('permission:manage-users')->group(function () {
         Route::get('/all-users', [AuthController::class, 'getAllUsers']);
+        Route::post('/users', [AuthController::class, 'createUser']);
         Route::patch('/users/{id}/role', [AuthController::class, 'updateUserRole']);
         Route::delete('/users/{id}', [AuthController::class, 'deleteUser']);
     });

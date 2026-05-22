@@ -16,6 +16,11 @@ use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
+    private function userWithRoles(User $user): User
+    {
+        return $user->load('roles:id,name');
+    }
+
     //register using google account
     public function handleGoogleCallback()
     {
@@ -136,7 +141,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user
+            'user' => $this->userWithRoles($user)
         ]);
     }
     // Login
@@ -159,7 +164,7 @@ class AuthController extends Controller
 
         return response()->json([
             "status" => "success",
-            'user' => $user,
+            'user' => $this->userWithRoles($user),
             'token' => $token,
             'message' => 'logged in'
         ]);
@@ -228,7 +233,7 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Profile updated successfully',
-            'data' => $user
+            'data' => $this->userWithRoles($user)
         ]);
     }
     //forgot password
@@ -344,6 +349,35 @@ class AuthController extends Controller
         ]);
     }
 
+    public function createUser(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|min:3|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'adress' => 'nullable|string|max:255',
+            'phone_number' => 'nullable|string|max:20',
+            'role' => 'required|exists:roles,name'
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'adress' => $request->adress,
+            'phone_number' => $request->phone_number,
+            'email_verified_at' => now()
+        ]);
+
+        $user->assignRole($request->role);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User created successfully',
+            'user' => $this->userWithRoles($user)
+        ], 201);
+    }
+
     public function deleteUser($id)
     {
         $user = User::find($id);
@@ -385,6 +419,7 @@ class AuthController extends Controller
             'image',
             'avatar'
         )
+            ->with('roles:id,name')
             ->where('id', $user->id)->first();
 
         return response()->json([
