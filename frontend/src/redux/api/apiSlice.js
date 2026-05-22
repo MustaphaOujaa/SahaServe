@@ -149,8 +149,13 @@ export const apiSlice = createApi({
     updateDish: builder.mutation({
       query: ({ dishId, data }) => ({
         url: `/dishes/${dishId}`,
-        method: 'PATCH',
-        body: data,
+        method: data instanceof FormData ? 'POST' : 'PATCH',
+        body: data instanceof FormData
+          ? (() => {
+              data.append('_method', 'PATCH');
+              return data;
+            })()
+          : data,
       }),
       invalidatesTags: ['Dishes'],
     }),
@@ -177,8 +182,13 @@ export const apiSlice = createApi({
     updateCategory: builder.mutation({
       query: ({ categoryId, data }) => ({
         url: `/categories/${categoryId}`,
-        method: 'PATCH',
-        body: data,
+        method: data instanceof FormData ? 'POST' : 'PATCH',
+        body: data instanceof FormData
+          ? (() => {
+              data.append('_method', 'PATCH');
+              return data;
+            })()
+          : data,
       }),
       invalidatesTags: ['Categories', 'Dishes'],
     }),

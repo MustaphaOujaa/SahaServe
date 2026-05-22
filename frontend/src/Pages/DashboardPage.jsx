@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   useCreateUserMutation,
@@ -128,6 +128,127 @@ const statusStyles = {
   "N/A": "bg-[#f8f6f1] text-[#8a7662] border-[#e8dfd2]",
 };
 
+const apiOrigin = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace(/\/api\/?$/, "");
+
+const getImageUrl = (image) => {
+  if (!image) {
+    return "";
+  }
+
+  if (/^(https?:|blob:|data:)/i.test(image)) {
+    return image;
+  }
+
+  const cleanPath = image.replace(/^\/+/, "");
+  if (/^(users|categories|dishes)\//i.test(cleanPath)) {
+    return `${apiOrigin}/storage/${cleanPath}`;
+  }
+
+  return `${apiOrigin}/${cleanPath}`;
+};
+
+const getDishImages = (dish) => (dish?.images || []).map((image) => image.url).filter(Boolean);
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+
+const compressImageFile = (file, maxSize = MAX_IMAGE_SIZE) =>
+  new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Please choose an image file."));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read the image."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("Failed to load the image."));
+      image.onload = () => {
+        const maxDimension = 1400;
+        const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const buildBlob = (quality) => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error("Failed to compress the image."));
+                return;
+              }
+
+              if (blob.size <= maxSize || quality <= 0.55) {
+                if (blob.size > maxSize) {
+                  reject(new Error("Image must be 2 MB or less after compression."));
+                  return;
+                }
+
+                resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+                return;
+              }
+
+              buildBlob(quality - 0.1);
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+
+        buildBlob(file.size > maxSize ? 0.82 : 0.9);
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+function CategoryImage({ image, name, className = "h-12 w-12" }) {
+  const [hasError, setHasError] = useState(false);
+  const src = getImageUrl(image);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  if (!src || hasError) {
+    return (
+      <div className={`${className} flex shrink-0 items-center justify-center rounded-[10px] border border-beige bg-gold-pale text-gold`}>
+        <i className="fas fa-image text-[0.9rem]"></i>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name || "Category"}
+      onError={() => setHasError(true)}
+      className={`${className} shrink-0 rounded-[10px] border border-beige object-cover`}
+    />
+  );
+}
+
+function ImageStrip({ images = [], name, size = "h-16 w-16" }) {
+  const visibleImages = images.length ? images.slice(0, 5) : [""];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {visibleImages.map((image, index) => (
+        <div key={`${image}-${index}`} className="relative">
+          <CategoryImage image={image} name={name} className={size} />
+          {images.length > 1 && image && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brown-dark px-1 text-[0.62rem] font-bold text-white">
+              {index + 1}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatusBadge({ value }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[0.72rem] font-semibold capitalize ${statusStyles[value] || statusStyles.pending}`}>
@@ -233,6 +354,8 @@ const DashboardPage = () => {
   const [tableToDelete, setTableToDelete] = useState(null);
   const [dishToDelete, setDishToDelete] = useState(null);
   const [dishToEdit, setDishToEdit] = useState(null);
+  const [categoryToEdit, setCategoryToEdit] = useState(null);
+  const [tagToEdit, setTagToEdit] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [tagToDelete, setTagToDelete] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -248,6 +371,8 @@ const DashboardPage = () => {
     description: "",
     price: "",
     is_available: true,
+    imageFiles: [],
+    imagePreviews: [],
   });
   const [dishEditForm, setDishEditForm] = useState({
     name: "",
@@ -255,11 +380,21 @@ const DashboardPage = () => {
     description: "",
     price: "",
     is_available: true,
+    imageFiles: [],
+    imagePreviews: [],
   });
+  const [categoryEditForm, setCategoryEditForm] = useState({
+    name: "",
+    description: "",
+    imageFile: null,
+    imagePreview: "",
+  });
+  const [tagEditForm, setTagEditForm] = useState({ name: "" });
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
-    image: "",
+    imageFile: null,
+    imagePreview: "",
   });
   const [newTag, setNewTag] = useState({ name: "" });
   const [newUser, setNewUser] = useState({
@@ -469,14 +604,18 @@ const DashboardPage = () => {
     event.preventDefault();
 
     try {
-      await createDish({
-        ...newDish,
-        category_id: Number(newDish.category_id),
-        price: Number(newDish.price),
-      }).unwrap();
+      const formData = new FormData();
+      formData.append("name", newDish.name);
+      formData.append("category_id", Number(newDish.category_id));
+      formData.append("description", newDish.description || "");
+      formData.append("price", Number(newDish.price));
+      formData.append("is_available", newDish.is_available ? "1" : "0");
+      newDish.imageFiles.forEach((imageFile) => formData.append("images[]", imageFile));
+
+      await createDish(formData).unwrap();
       toast.success("Dish created.");
       setShowCreateDishForm(false);
-      setNewDish({ name: "", category_id: "", description: "", price: "", is_available: true });
+      setNewDish({ name: "", category_id: "", description: "", price: "", is_available: true, imageFiles: [], imagePreviews: [] });
     } catch (error) {
       toast.error(error?.data?.message || "Failed to create dish.");
     }
@@ -486,10 +625,17 @@ const DashboardPage = () => {
     event.preventDefault();
 
     try {
-      await createCategory(newCategory).unwrap();
+      const formData = new FormData();
+      formData.append("name", newCategory.name);
+      formData.append("description", newCategory.description || "");
+      if (newCategory.imageFile) {
+        formData.append("image", newCategory.imageFile);
+      }
+
+      await createCategory(formData).unwrap();
       toast.success("Category created.");
       setShowCreateCategoryForm(false);
-      setNewCategory({ name: "", description: "", image: "" });
+      setNewCategory({ name: "", description: "", imageFile: null, imagePreview: "" });
     } catch (error) {
       toast.error(error?.data?.message || "Failed to create category.");
     }
@@ -589,7 +735,24 @@ const DashboardPage = () => {
       description: dish.description || "",
       price: dish.price || "",
       is_available: Boolean(dish.is_available),
+      imageFiles: [],
+      imagePreviews: getDishImages(dish),
     });
+  };
+
+  const openCategoryEditForm = (category) => {
+    setCategoryToEdit(category);
+    setCategoryEditForm({
+      name: category.name || "",
+      description: category.description || "",
+      imageFile: null,
+      imagePreview: category.image || "",
+    });
+  };
+
+  const openTagEditForm = (tag) => {
+    setTagToEdit(tag);
+    setTagEditForm({ name: tag.name || "" });
   };
 
   const handleDishEditSubmit = async (event) => {
@@ -600,13 +763,17 @@ const DashboardPage = () => {
     }
 
     try {
+      const formData = new FormData();
+      formData.append("name", dishEditForm.name);
+      formData.append("category_id", Number(dishEditForm.category_id));
+      formData.append("description", dishEditForm.description || "");
+      formData.append("price", Number(dishEditForm.price));
+      formData.append("is_available", dishEditForm.is_available ? "1" : "0");
+      dishEditForm.imageFiles.forEach((imageFile) => formData.append("images[]", imageFile));
+
       await updateDish({
         dishId: dishToEdit.id,
-        data: {
-          ...dishEditForm,
-          category_id: Number(dishEditForm.category_id),
-          price: Number(dishEditForm.price),
-        },
+        data: formData,
       }).unwrap();
       toast.success("Dish updated.");
       setDishToEdit(null);
@@ -627,19 +794,87 @@ const DashboardPage = () => {
     }
   };
 
-  const handleCategoryUpdate = async (categoryId, data) => {
+  const handleCategoryEditSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!categoryToEdit) {
+      return;
+    }
+
     try {
-      await updateCategory({ categoryId, data }).unwrap();
+      const formData = new FormData();
+      formData.append("name", categoryEditForm.name);
+      formData.append("description", categoryEditForm.description || "");
+      if (categoryEditForm.imageFile) {
+        formData.append("image", categoryEditForm.imageFile);
+      }
+
+      await updateCategory({
+        categoryId: categoryToEdit.id,
+        data: formData,
+      }).unwrap();
       toast.success("Category updated.");
+      setCategoryToEdit(null);
     } catch (error) {
       toast.error(error?.data?.message || "Failed to update category.");
     }
   };
 
-  const handleTagUpdate = async (tagId, data) => {
+  const handleCategoryImageSelect = async (file, setForm) => {
+    if (!file) {
+      return;
+    }
+
     try {
-      await updateTag({ tagId, data }).unwrap();
+      const compressedFile = await compressImageFile(file);
+      setForm((category) => ({
+        ...category,
+        imageFile: compressedFile,
+        imagePreview: URL.createObjectURL(compressedFile),
+      }));
+      toast.success("Image compressed and ready.");
+    } catch (error) {
+      toast.error(error.message || "Failed to prepare image.");
+    }
+  };
+
+  const handleDishImagesSelect = async (files, setForm) => {
+    const selectedFiles = Array.from(files || []).slice(0, 5);
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    try {
+      const compressedFiles = await Promise.all(selectedFiles.map((file) => compressImageFile(file)));
+      setForm((dish) => ({
+        ...dish,
+        imageFiles: compressedFiles,
+        imagePreviews: compressedFiles.map((file) => URL.createObjectURL(file)),
+      }));
+      if (files?.length > 5) {
+        toast.error("Only the first 5 images were selected.");
+      }
+      toast.success(`${compressedFiles.length} image${compressedFiles.length > 1 ? "s" : ""} compressed and ready.`);
+    } catch (error) {
+      toast.error(error.message || "Failed to prepare images.");
+    }
+  };
+
+  const handleTagEditSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!tagToEdit) {
+      return;
+    }
+
+    try {
+      await updateTag({
+        tagId: tagToEdit.id,
+        data: tagEditForm,
+      }).unwrap();
       toast.success("Tag updated.");
+      setTagToEdit(null);
     } catch (error) {
       toast.error(error?.data?.message || "Failed to update tag.");
     }
@@ -1245,7 +1480,14 @@ const DashboardPage = () => {
                         {isCreatingDish ? "Creating..." : "Create Dish"}
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="mb-3 flex flex-wrap items-center gap-3 rounded-[12px] border border-beige bg-white p-3">
+                      <ImageStrip images={newDish.imagePreviews} name={newDish.name} size="h-16 w-16" />
+                      <div className="min-w-0">
+                        <strong className="block truncate text-[0.86rem] text-brown-dark">{newDish.name || "Dish preview"}</strong>
+                        <span className="block truncate text-[0.74rem] text-text-mid">{newDish.imageFiles.length ? `${newDish.imageFiles.length}/5 image${newDish.imageFiles.length > 1 ? "s" : ""} selected` : "No images selected"}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
                       <input required value={newDish.name} onChange={(event) => setNewDish((dish) => ({ ...dish, name: event.target.value }))} placeholder="Dish name" className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold" />
                       <select required value={newDish.category_id} onChange={(event) => setNewDish((dish) => ({ ...dish, category_id: event.target.value }))} className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold">
                         <option value="">Category</option>
@@ -1258,6 +1500,11 @@ const DashboardPage = () => {
                       <label className="flex items-center gap-3 rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] text-text-mid">
                         <input type="checkbox" checked={newDish.is_available} onChange={(event) => setNewDish((dish) => ({ ...dish, is_available: event.target.checked }))} className="h-4 w-4 accent-[#c8922a]" />
                         Available
+                      </label>
+                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold">
+                        <i className="fas fa-image"></i>
+                        Choose Images
+                        <input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => handleDishImagesSelect(event.target.files, setNewDish)} className="hidden" />
                       </label>
                     </div>
                   </form>
@@ -1272,7 +1519,13 @@ const DashboardPage = () => {
                       <SimpleTable
                         columns={["Dish", "Category", "Price", "Status", "Actions"]}
                         rows={adminDishes.map((dish) => [
-                          <strong className="text-brown-dark">{dish.name}</strong>,
+                          <div className="flex items-center gap-3">
+                            <ImageStrip images={getDishImages(dish)} name={dish.name} size="h-12 w-12" />
+                            <div className="min-w-0">
+                              <strong className="block truncate text-brown-dark">{dish.name}</strong>
+                              <span className="mt-1 block text-[0.68rem] text-text-mid">{getDishImages(dish).length || 0}/5 images</span>
+                            </div>
+                          </div>,
                           dish.category?.name || "N/A",
                           formatMoney(dish.price),
                           <StatusBadge value={dish.is_available ? "available" : "hidden"} />,
@@ -1300,16 +1553,38 @@ const DashboardPage = () => {
                         </div>
                         {showCreateCategoryForm && (
                           <form onSubmit={handleCreateCategory} className="mb-3 grid gap-2">
+                            <div className="flex items-center gap-3 rounded-[12px] border border-beige bg-white p-3">
+                              <CategoryImage image={newCategory.imagePreview} name={newCategory.name} className="h-14 w-14" />
+                              <div className="min-w-0">
+                                <strong className="block truncate text-[0.82rem] text-brown-dark">{newCategory.name || "Category preview"}</strong>
+                                <span className="block truncate text-[0.72rem] text-text-mid">{newCategory.imageFile ? `${newCategory.imageFile.name} - ${(newCategory.imageFile.size / 1024).toFixed(0)} KB` : "No image selected"}</span>
+                              </div>
+                            </div>
                             <input required value={newCategory.name} onChange={(event) => setNewCategory((category) => ({ ...category, name: event.target.value }))} placeholder="Category name" className="rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] outline-none focus:border-gold" />
                             <input value={newCategory.description} onChange={(event) => setNewCategory((category) => ({ ...category, description: event.target.value }))} placeholder="Description" className="rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] outline-none focus:border-gold" />
+                            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold">
+                              <i className="fas fa-image"></i>
+                              Choose Image
+                              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => handleCategoryImageSelect(event.target.files?.[0], setNewCategory)} className="hidden" />
+                            </label>
                             <button type="submit" disabled={isCreatingCategory} className="btn btn-gold !px-4 !py-2">{isCreatingCategory && <ButtonSpinner />}Create Category</button>
                           </form>
                         )}
                         <div className="flex flex-col gap-2">
                           {adminCategories.map((category) => (
                             <div key={category.id} className="grid grid-cols-[1fr_auto] items-center gap-2">
-                              <input value={category.name} disabled={isUpdatingCategory} onChange={(event) => handleCategoryUpdate(category.id, { name: event.target.value })} className="rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] text-text-mid outline-none focus:border-gold" />
-                              <button type="button" disabled={isDeletingCategory} onClick={() => setCategoryToDelete(category)} className="rounded-full border border-[#e8c5bd] bg-[#f7ece9] px-3 py-1 text-[0.72rem] font-semibold text-[#9b3f2f]">Delete</button>
+                              <div className="flex min-w-0 items-center gap-3 rounded-[10px] border border-beige bg-white px-3 py-2">
+                                <CategoryImage image={category.image} name={category.name} />
+                                <div className="min-w-0">
+                                  <strong className="block truncate text-[0.78rem] text-brown-dark">{category.name}</strong>
+                                  {category.description && <span className="mt-1 block truncate text-[0.72rem] text-text-mid">{category.description}</span>}
+                                  {category.image && <span className="mt-1 block truncate text-[0.68rem] text-text-mid/70">{category.image}</span>}
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <button type="button" onClick={() => openCategoryEditForm(category)} className="rounded-full border border-beige bg-white px-3 py-1 text-[0.72rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold">Edit</button>
+                                <button type="button" disabled={isDeletingCategory} onClick={() => setCategoryToDelete(category)} className="rounded-full border border-[#e8c5bd] bg-[#f7ece9] px-3 py-1 text-[0.72rem] font-semibold text-[#9b3f2f]">Delete</button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1330,8 +1605,11 @@ const DashboardPage = () => {
                         <div className="flex flex-col gap-2">
                           {adminTags.map((tag) => (
                             <div key={tag.id} className="grid grid-cols-[1fr_auto] items-center gap-2">
-                              <input value={tag.name} disabled={isUpdatingTag} onChange={(event) => handleTagUpdate(tag.id, { name: event.target.value })} className="rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] text-text-mid outline-none focus:border-gold" />
-                              <button type="button" disabled={isDeletingTag} onClick={() => setTagToDelete(tag)} className="rounded-full border border-[#e8c5bd] bg-[#f7ece9] px-3 py-1 text-[0.72rem] font-semibold text-[#9b3f2f]">Delete</button>
+                              <div className="rounded-[10px] border border-beige bg-white px-3 py-2 text-[0.78rem] font-semibold text-brown-dark">{tag.name}</div>
+                              <div className="flex flex-wrap gap-2">
+                                <button type="button" onClick={() => openTagEditForm(tag)} className="rounded-full border border-beige bg-white px-3 py-1 text-[0.72rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold">Edit</button>
+                                <button type="button" disabled={isDeletingTag} onClick={() => setTagToDelete(tag)} className="rounded-full border border-[#e8c5bd] bg-[#f7ece9] px-3 py-1 text-[0.72rem] font-semibold text-[#9b3f2f]">Delete</button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1518,6 +1796,14 @@ const DashboardPage = () => {
               </button>
             </div>
 
+            <div className="mb-3 flex flex-wrap items-center gap-4 rounded-[14px] border border-beige bg-cream/70 p-4">
+              <ImageStrip images={dishEditForm.imagePreviews} name={dishEditForm.name} size="h-20 w-20" />
+              <div className="min-w-0">
+                <strong className="block truncate text-brown-dark">{dishEditForm.name || "Dish preview"}</strong>
+                <span className="mt-1 block truncate text-[0.78rem] text-text-mid">{dishEditForm.imageFiles.length ? `${dishEditForm.imageFiles.length}/5 replacement image${dishEditForm.imageFiles.length > 1 ? "s" : ""} selected` : `${dishEditForm.imagePreviews.length || 0}/5 current image${dishEditForm.imagePreviews.length === 1 ? "" : "s"}`}</span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <input required value={dishEditForm.name} onChange={(event) => setDishEditForm((dish) => ({ ...dish, name: event.target.value }))} placeholder="Dish name" className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold" />
               <select required value={dishEditForm.category_id} onChange={(event) => setDishEditForm((dish) => ({ ...dish, category_id: event.target.value }))} className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold">
@@ -1532,6 +1818,11 @@ const DashboardPage = () => {
                 Available
               </label>
               <textarea value={dishEditForm.description || ""} onChange={(event) => setDishEditForm((dish) => ({ ...dish, description: event.target.value }))} placeholder="Description" className="min-h-[96px] rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold md:col-span-2" />
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold md:col-span-2">
+                <i className="fas fa-image"></i>
+                Change Images
+                <input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => handleDishImagesSelect(event.target.files, setDishEditForm)} className="hidden" />
+              </label>
             </div>
 
             <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -1541,6 +1832,75 @@ const DashboardPage = () => {
               <button type="submit" disabled={isUpdatingDish} className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-2.5 text-[0.86rem] font-semibold text-white transition-all hover:bg-brown disabled:cursor-not-allowed disabled:opacity-70">
                 {isUpdatingDish && <ButtonSpinner />}
                 {isUpdatingDish ? "Updating..." : "Update Dish"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      {categoryToEdit && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-[rgba(26,15,0,0.55)] px-4 backdrop-blur-[5px]">
+          <form onSubmit={handleCategoryEditSubmit} className="w-full max-w-[520px] rounded-[18px] border border-[rgba(200,146,42,0.18)] bg-white p-6 shadow-custom-lg">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-beige pb-4">
+              <div>
+                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-gold">Menu</span>
+                <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-brown-dark">Edit Category</h3>
+              </div>
+              <button type="button" onClick={() => setCategoryToEdit(null)} className="flex h-9 w-9 items-center justify-center rounded-full bg-cream text-text-mid transition-all hover:bg-gold-pale hover:text-gold">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="grid gap-3">
+              <div className="flex items-center gap-4 rounded-[14px] border border-beige bg-cream/70 p-4">
+                <CategoryImage image={categoryEditForm.imagePreview} name={categoryEditForm.name} className="h-20 w-20" />
+                <div className="min-w-0">
+                  <strong className="block truncate text-brown-dark">{categoryEditForm.name || "Category preview"}</strong>
+                  <span className="mt-1 block truncate text-[0.78rem] text-text-mid">{categoryEditForm.imageFile ? `${categoryEditForm.imageFile.name} - ${(categoryEditForm.imageFile.size / 1024).toFixed(0)} KB` : "Current image"}</span>
+                </div>
+              </div>
+              <input required value={categoryEditForm.name} onChange={(event) => setCategoryEditForm((category) => ({ ...category, name: event.target.value }))} placeholder="Category name" className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold" />
+              <input value={categoryEditForm.description} onChange={(event) => setCategoryEditForm((category) => ({ ...category, description: event.target.value }))} placeholder="Description" className="rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold" />
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold">
+                <i className="fas fa-image"></i>
+                Change Image
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => handleCategoryImageSelect(event.target.files?.[0], setCategoryEditForm)} className="hidden" />
+              </label>
+            </div>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" disabled={isUpdatingCategory} onClick={() => setCategoryToEdit(null)} className="rounded-full border border-beige bg-white px-5 py-2.5 text-[0.86rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="submit" disabled={isUpdatingCategory} className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-2.5 text-[0.86rem] font-semibold text-white transition-all hover:bg-brown disabled:cursor-not-allowed disabled:opacity-70">
+                {isUpdatingCategory && <ButtonSpinner />}
+                {isUpdatingCategory ? "Updating..." : "Update Category"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      {tagToEdit && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-[rgba(26,15,0,0.55)] px-4 backdrop-blur-[5px]">
+          <form onSubmit={handleTagEditSubmit} className="w-full max-w-[420px] rounded-[18px] border border-[rgba(200,146,42,0.18)] bg-white p-6 shadow-custom-lg">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-beige pb-4">
+              <div>
+                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-gold">Menu</span>
+                <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-brown-dark">Edit Tag</h3>
+              </div>
+              <button type="button" onClick={() => setTagToEdit(null)} className="flex h-9 w-9 items-center justify-center rounded-full bg-cream text-text-mid transition-all hover:bg-gold-pale hover:text-gold">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <input required value={tagEditForm.name} onChange={(event) => setTagEditForm({ name: event.target.value })} placeholder="Tag name" className="w-full rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.86rem] outline-none focus:border-gold" />
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" disabled={isUpdatingTag} onClick={() => setTagToEdit(null)} className="rounded-full border border-beige bg-white px-5 py-2.5 text-[0.86rem] font-semibold text-text-mid transition-all hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="submit" disabled={isUpdatingTag} className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-2.5 text-[0.86rem] font-semibold text-white transition-all hover:bg-brown disabled:cursor-not-allowed disabled:opacity-70">
+                {isUpdatingTag && <ButtonSpinner />}
+                {isUpdatingTag ? "Updating..." : "Update Tag"}
               </button>
             </div>
           </form>
