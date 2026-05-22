@@ -67,7 +67,7 @@ class AccountSeeder extends Seeder
         $delivery->assignRole(Role::findByName('delivery', 'sanctum'));
 
         // client account
-        $delivery = User::firstOrCreate(
+        $client = User::firstOrCreate(
             ['email' => "client@email.com"],
             [
                 'name' => "client",
@@ -76,6 +76,6 @@ class AccountSeeder extends Seeder
                 'password' => bcrypt('user123')
             ]
         );
-        $delivery->assignRole(Role::findByName('client', 'sanctum'));
+        $client->assignRole(Role::findByName('client', 'sanctum'));
     }
 }
