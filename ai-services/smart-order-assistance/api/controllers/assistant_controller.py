@@ -7,7 +7,7 @@ def handle_assistance(data):
     if not message or not message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    result = get_recommendation(message)
+    result = get_recommendation(message, data.auth_token)
 
     if isinstance(result, dict) and "error" in result:
         raise HTTPException(status_code=500, detail=result.get("error"))

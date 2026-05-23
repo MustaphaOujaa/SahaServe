@@ -11,5 +11,14 @@ cd backend
 start cmd /k " composer install && php artisan migrate && php artisan key:generate && php artisan serve"
 cd ..
 
+:: Ai services
+cd ai-services\review-analysis\api
+start cmd /k "pip install fastapi uvicorn python-dotenv groq textblob && uvicorn app:app --reload --port 5000"
+cd ..\..\..
+
+cd ai-services\smart-order-assistance\api
+start cmd /k "pip install fastapi uvicorn python-dotenv groq && uvicorn app:app --reload --port 5005"
+cd ..\..\..
+
 echo services ready!
 pause

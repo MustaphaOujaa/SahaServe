@@ -1,4 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+
+const ASSISTANT_API_URL = import.meta.env.VITE_DISH_ASSISTANT_URL || 'http://127.0.0.1:5005/assistant/chat';
 
 const Soa = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +13,7 @@ const Soa = () => {
       id: 'welcome',
       sender: 'bot',
       text: "Salam! ✦ I am Soa, your Smart Order Assistant at SahaServe. I can guide you through our authentic Moroccan specialties, suggest the perfect dish for your taste, or find delicious vegetarian and spicy options. What are you in the mood for tonight? 🍽️",
+      dishes: [],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -20,60 +25,6 @@ const Soa = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Mock Menu Database for intelligent responses
-  const menuData = [
-    {
-      name: "Lamb Tagine",
-      category: "Moroccan Classic",
-      price: "28 €",
-      description: "Slow-cooked to perfection with sweet prunes, toasted almonds, and our house blend of Ras El Hanout spices. A signature Chef's Pick!",
-      tags: ["popular", "recommended", "chef pick", "meat", "lamb"]
-    },
-    {
-      name: "Royal Couscous",
-      category: "Moroccan Classic",
-      price: "24 €",
-      description: "Steamed fluffy semolina served with seven fresh seasonal vegetables, a rich spiced broth, and succulent grilled Merguez sausage.",
-      tags: ["couscous", "popular", "meat", "vegetables"]
-    },
-    {
-      name: "Zaalouk Salad",
-      category: "Starter",
-      price: "14 €",
-      description: "A traditional smoky roasted eggplant and ripe tomato dip, seasoned with garlic, olive oil, and cumin, served with warm crusty Khobz bread.",
-      tags: ["vegan", "vegetarian", "healthy", "salad", "cold starter"]
-    },
-    {
-      name: "Bastilla au Poulet",
-      category: "Moroccan Classic",
-      price: "22 €",
-      description: "Crispy layers of paper-thin Warqa pastry enclosing a saffron-infused shredded chicken, eggs, and sweetened almond filling, dusted with cinnamon and powdered sugar.",
-      tags: ["popular", "chicken", "pastry", "sweet and savory"]
-    },
-    {
-      name: "Margherita Pizza",
-      category: "Pizza",
-      price: "45 DH",
-      description: "Classic Neapolitan style pizza topped with organic tomato sauce, fresh creamy mozzarella cheese, and fragrant basil leaves.",
-      tags: ["vegetarian", "cheese", "pizza"]
-    },
-    {
-      name: "Spicy Chicken Burger",
-      category: "Burger",
-      price: "55 DH",
-      description: "Tender grilled chicken breast served in a toasted brioche bun with crispy lettuce, tomatoes, and our signature fiery hot sauce.",
-      tags: ["spicy", "chicken", "burger"]
-    },
-    {
-      name: "Caesar Salad",
-      category: "Salad",
-      price: "35 DH",
-      description: "Crisp hearts of romaine lettuce tossed in a creamy Caesar dressing, topped with grilled chicken breast slices, garlic croutons, and freshly shaved Parmesan cheese.",
-      tags: ["healthy", "salad", "chicken"]
-    }
-  ];
-
-  // Quick replies definition
   const quickReplies = [
     { label: "Chef's Pick 👑", query: "Recommend a Chef's Pick" },
     { label: "Spicy Options 🌶️", query: "Do you have anything spicy?" },
@@ -81,80 +32,11 @@ const Soa = () => {
     { label: "Lamb Tagine 🥩", query: "Tell me about the Lamb Tagine" }
   ];
 
-  // Intelligent mock response logic
-  const getMockResponse = (userInput) => {
-    const input = userInput.toLowerCase().trim();
-
-    if (input.includes("hello") || input.includes("hi") || input.includes("salam") || input.includes("hey")) {
-      return "Salam Alaykum! Welcome to SahaServe. ✦ How can I assist you with our menu today?";
-    }
-
-    if (input.includes("chef") || input.includes("recommend") || input.includes("signature") || input.includes("best") || input.includes("popular")) {
-      const tagine = menuData[0];
-      const bastilla = menuData[3];
-      return `Our top recommendation is the **${tagine.name}** (${tagine.price}) — it's our signature Chef's Pick, slow-cooked with prunes, almonds, and Ras El Hanout. Another guest favorite is the sweet and savory **${bastilla.name}** (${bastilla.price}), a beautiful crispy chicken pastry!`;
-    }
-
-    if (input.includes("spicy") || input.includes("hot") || input.includes("chili")) {
-      const spicyBurger = menuData[5];
-      return `For a kick of heat, try our **${spicyBurger.name}** (${spicyBurger.price}) made with tender grilled chicken and our fiery signature hot sauce! You can also request extra Harissa sauce with our **Royal Couscous**.`;
-    }
-
-    if (input.includes("vegetarian") || input.includes("vegan") || input.includes("no meat") || input.includes("meatless")) {
-      const zaalouk = menuData[2];
-      const pizza = menuData[4];
-      return `We have excellent vegetarian dishes! \n\n1. **${zaalouk.name}** (${zaalouk.price}) - A vegan smoky roasted eggplant & tomato dip served with warm bread.\n2. **${pizza.name}** (${pizza.price}) - Classic mozzarella pizza.\n\nAlso, our **Royal Couscous** can be prepared as 100% vegetarian upon request!`;
-    }
-
-    if (input.includes("tagine") || input.includes("lamb")) {
-      const tagine = menuData[0];
-      return `The **${tagine.name}** (${tagine.price}) is a masterpiece of Moroccan slow-cooking. We prepare it in a traditional clay tagine pot with tender halal lamb, sweet prunes, toasted almonds, and authentic Ras El Hanout spices. It's incredibly flavorful and highly recommended!`;
-    }
-
-    if (input.includes("couscous")) {
-      const couscous = menuData[1];
-      return `Our **${couscous.name}** (${couscous.price}) features fluffy steamed semolina piled high with seven seasonal vegetables, a rich spiced broth, and flavorful grilled Merguez sausage. Perfect for a complete, comforting meal!`;
-    }
-
-    if (input.includes("bastilla") || input.includes("chicken pastry")) {
-      const bastilla = menuData[3];
-      return `**${bastilla.name}** (${bastilla.price}) is an exquisite sweet and savory traditional pastry. Inside crispy, golden-brown layers of paper-thin Warqa dough, you'll find aromatic saffron-shredded chicken, egg, and roasted crushed almonds dusted with sweet cinnamon and powdered sugar.`;
-    }
-
-    if (input.includes("pizza")) {
-      const pizza = menuData[4];
-      return `Yes, we serve a fresh **${pizza.name}** (${pizza.price}) with aromatic tomato sauce, melted mozzarella, and fresh basil. A perfect choice for a classic, delicious option!`;
-    }
-
-    if (input.includes("burger")) {
-      const burger = menuData[5];
-      return `Our **${burger.name}** (${burger.price}) is delicious! It comes in a warm toasted brioche bun with grilled chicken breast, crisp lettuce, tomato, and our fiery house hot sauce.`;
-    }
-
-    if (input.includes("salad")) {
-      const zaalouk = menuData[2];
-      const caesar = menuData[6];
-      return `We offer two fantastic salads:\n\n1. **${zaalouk.name}** (${zaalouk.price}) - Traditional smoky Moroccan eggplant & tomato dip.\n2. **${caesar.name}** (${caesar.price}) - Crisp romaine hearts with grilled chicken, crunchy croutons, and shaved Parmesan.`;
-    }
-
-    if (input.includes("price") || input.includes("cost") || input.includes("how much")) {
-      return "Our delicious starters begin at 14 € (Zaalouk Salad), pizzas at 45 DH, burgers at 55 DH, and our traditional Moroccan main courses range from 22 € to 28 €. Let me know which dish you are curious about!";
-    }
-
-    // Default response using keywords match search
-    const matchingDishes = menuData.filter(d => 
-      input.split(' ').some(word => word.length > 2 && d.name.toLowerCase().includes(word) || d.description.toLowerCase().includes(word))
-    );
-
-    if (matchingDishes.length > 0) {
-      const dish = matchingDishes[0];
-      return `Are you interested in the **${dish.name}** (${dish.price})? It is a delicious ${dish.category} dish. Here is a description: ${dish.description}`;
-    }
-
-    return "I want to make sure I guide you perfectly! I recommend checking out our signature **Lamb Tagine** (Chef's Pick), traditional **Royal Couscous**, or crispy **Bastilla au Poulet**. You can also ask me about vegetarian and spicy options!";
+  const handleAddDishToCart = (dish) => {
+    handleSend(`Add ${dish.name} to my cart`);
   };
 
-  const handleSend = (textToSend) => {
+  const handleSend = async (textToSend) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
@@ -170,18 +52,49 @@ const Soa = () => {
     setInputText('');
     setIsLoading(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const responseText = getMockResponse(text);
+    try {
+      const response = await axios.post(ASSISTANT_API_URL, {
+        message: text,
+        auth_token: localStorage.getItem('auth_token'),
+      });
+      
+      let responseText = "Sorry, I encountered an error.";
+      let recommendedDishes = [];
+      
+      if (response.data && response.data.response) {
+        if (typeof response.data.response === 'string') {
+          responseText = response.data.response;
+        } else {
+          if (response.data.response.summary) {
+            responseText = response.data.response.summary;
+          }
+          if (response.data.response.recommended_dishes) {
+            recommendedDishes = response.data.response.recommended_dishes;
+          }
+        }
+      }
+
       const botMessage = {
         id: `bot-${Date.now()}`,
         sender: 'bot',
         text: responseText,
+        dishes: recommendedDishes,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error("AI Assistant Error:", error);
+      const errorMessage = {
+        id: `bot-error-${Date.now()}`,
+        sender: 'bot',
+        text: "I'm having trouble connecting to my brain right now. Please check your connection or try again later.",
+        dishes: [],
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1200);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -196,6 +109,7 @@ const Soa = () => {
         id: 'welcome',
         sender: 'bot',
         text: "Chat cleared! ✦ Ask me anything about our delicious menu items, recommendations, or diets.",
+        dishes: [],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -312,6 +226,56 @@ const Soa = () => {
                     idx % 2 === 1 ? <strong key={idx} className="font-bold text-gold-light">{part}</strong> : part
                   )}
                 </p>
+
+                {/* Render recommended dishes inside bot messages if they exist */}
+                {message.sender === 'bot' && message.dishes && message.dishes.length > 0 && (
+                  <div className="mt-3.5 pt-3 border-t border-gold/10 space-y-2.5 animate-[fadeUp_0.3s_ease_both]">
+                    <p className="text-[0.73rem] font-bold text-gold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <i className="fas fa-utensils text-[0.7rem]"></i> Match recommendations:
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 max-w-full">
+                      {message.dishes.map((dish) => (
+                        <div 
+                          key={dish.id} 
+                          className="p-3 rounded-xl bg-black/40 border border-gold/20 flex justify-between items-center gap-4 hover:border-gold/45 hover:bg-black/50 transition-all duration-300"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[0.84rem] font-bold text-white truncate flex items-center gap-1">
+                              {dish.name}
+                            </h4>
+                            {dish.reason && (
+                              <p className="text-[0.7rem] text-gold-pale/75 italic mt-0.5 line-clamp-1">
+                                {dish.reason}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
+                            <span className="text-[0.84rem] font-bold text-gold-light font-mono">
+                              {typeof dish.price === 'number' ? `${dish.price.toFixed(2)} DH` : dish.price}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <Link
+                                to={`/dish/${dish.id}`}
+                                className="text-[0.72rem] text-gold hover:text-gold-light hover:underline transition-all cursor-pointer font-bold flex items-center gap-1"
+                              >
+                                <i className="fas fa-info-circle text-[0.68rem]"></i> Details
+                              </Link>
+                              <button
+                                onClick={() => handleAddDishToCart(dish)}
+                                disabled={isLoading}
+                                className="px-2.5 py-1 rounded-full bg-[linear-gradient(135deg,var(--gold)_0%,#a0721e_100%)] hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold text-[0.68rem] tracking-wide active:scale-95 transition-all shadow-[0_2px_6px_rgba(200,146,42,0.15)] flex items-center gap-1 cursor-pointer"
+                              >
+                                <i className="fas fa-plus text-[0.6rem]"></i> Add
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <span
                   className={`text-[0.7rem] self-end opacity-50 ${
                     message.sender === 'user' ? 'text-white' : 'text-gold-pale'

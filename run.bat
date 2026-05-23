@@ -14,5 +14,15 @@ cd ..
 :: Ai services
 :: -----------
 
+:: Review Analysis Service
+cd ai-services\review-analysis\api
+start cmd /k uvicorn app:app --reload --port 5000
+cd ..\..\..
+
+:: Smart Order Assistance Service
+cd ai-services\smart-order-assistance\api
+start cmd /k uvicorn app:app --reload --port 5005
+cd ..\..\..
+
 echo services runing!
 pause
