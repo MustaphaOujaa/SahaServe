@@ -22,10 +22,15 @@ class RolesAndPermissionsSeeder extends Seeder
             'take-delivery',
             'mark-delivered',
             'manage-dishs',
+            'manage-dishes',
             'manage-users',
             'manage-tags',
+            'manage-categories',
+            'manage-reviews',
+            'manage-roles',
             'make-reservation',
-            'make-order'
+            'make-order',
+            'mark-ready'
         ];
 
         foreach ($permissions as $permission) {
@@ -60,6 +65,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage-orders',
             'mark-ready',
             'manage-dishs',
+            'manage-dishes',
             'manage-tags',
         ]);
 

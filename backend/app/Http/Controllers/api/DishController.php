@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Dish;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DishController extends Controller
 {
@@ -29,14 +30,33 @@ class DishController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_available' => 'boolean',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if (!isset($validated['is_available'])) {
             $validated['is_available'] = true;
         }
 
+        $images = $request->file('images', []);
+        $tagIds = $validated['tag_ids'] ?? $validated['tags'] ?? [];
+        unset($validated['tag_ids'], $validated['tags']);
+        unset($validated['images']);
+
         $dish = Dish::create($validated);
-        return response()->json(['success' => true, 'data' => $dish], 201);
+        $dish->tags()->sync($tagIds);
+
+        foreach ($images as $image) {
+            $dish->images()->create([
+                'url' => $image->store('dishes', 'public'),
+            ]);
+        }
+
+        return response()->json(['success' => true, 'data' => $dish->load(['category', 'images', 'tags'])], 201);
     }
 
     public function update(Request $request, $id)
@@ -51,9 +71,42 @@ class DishController extends Controller
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'is_available' => 'boolean',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $images = $request->file('images', []);
+        $shouldSyncTags = $request->has('tag_ids') || $request->has('tags');
+        $tagIds = $validated['tag_ids'] ?? $validated['tags'] ?? [];
+        unset($validated['tag_ids'], $validated['tags']);
+        unset($validated['images']);
+
         $dish->update($validated);
-        return response()->json(['success' => true, 'data' => $dish]);
+
+        if ($shouldSyncTags) {
+            $dish->tags()->sync($tagIds);
+        }
+
+        if (count($images) > 0) {
+            foreach ($dish->images as $dishImage) {
+                if ($dishImage->url) {
+                    Storage::disk('public')->delete($dishImage->url);
+                }
+                $dishImage->delete();
+            }
+
+            foreach ($images as $image) {
+                $dish->images()->create([
+                    'url' => $image->store('dishes', 'public'),
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true, 'data' => $dish->load(['category', 'images', 'tags'])]);
     }
 
     public function destroy($id)
@@ -61,6 +114,11 @@ class DishController extends Controller
         $dish = Dish::find($id);
         if (!$dish)
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        foreach ($dish->images as $dishImage) {
+            if ($dishImage->url) {
+                Storage::disk('public')->delete($dishImage->url);
+            }
+        }
         $dish->delete();
         return response()->json(['success' => true, 'message' => 'Deleted successfully']);
     }

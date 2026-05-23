@@ -20,7 +20,11 @@ class DatabaseSeeder extends Seeder
         //call sedders to relate them
         $this->call([
             RolesAndPermissionsSeeder::class,
-            AccountSeeder::class
+            AccountSeeder::class,
+            CategorySeeder::class,
+            TagSeeder::class,
+            DishSeeder::class,
+            TableSeeder::class,
         ]);
 
         // User::factory(10)->create();

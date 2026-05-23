@@ -11,9 +11,16 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
+    private function userWithRoles(User $user): User
+    {
+        return $user->load('roles:id,name');
+    }
+
     //register using google account
     public function handleGoogleCallback()
     {
@@ -34,21 +41,15 @@ class AuthController extends Controller
             $user->assignRole('client');
 
         } else {
-
-            if (!$user->google_id) {
-
-                $user->update([
-                    'google_id' => $googleUser->id,
-                    'avatar' => $googleUser->avatar,
-                ]);
-            }
+            $user->update([
+                'google_id' => $googleUser->id,
+                'avatar' => $googleUser->avatar,
+            ]);
         }
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        return redirect()->away($frontendUrl . '/login?token=' . $token);
     }
     //redirect user to google auth page
     public function redirectToGoogle()
@@ -140,7 +141,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user
+            'user' => $this->userWithRoles($user)
         ]);
     }
     // Login
@@ -163,7 +164,7 @@ class AuthController extends Controller
 
         return response()->json([
             "status" => "success",
-            'user' => $user,
+            'user' => $this->userWithRoles($user),
             'token' => $token,
             'message' => 'logged in'
         ]);
@@ -232,7 +233,7 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Profile updated successfully',
-            'data' => $user
+            'data' => $this->userWithRoles($user)
         ]);
     }
     //forgot password
@@ -314,12 +315,95 @@ class AuthController extends Controller
     //get all users
     public function getAllUsers()
     {
-        $users = User::select('id', 'name', 'email', 'adress', 'phone_number', 'image')->latest()->paginate(10);
+        $users = User::select('id', 'name', 'email', 'adress', 'phone_number', 'image', 'avatar', 'created_at')
+            ->with('roles:id,name')
+            ->latest()
+            ->paginate(10);
 
         return response()->json([
             'status' => 'success',
             'users' => $users
         ], 200);
+    }
+
+    public function updateUserRole(Request $request, $id)
+    {
+        $request->validate([
+            'role' => 'required|exists:roles,name'
+        ]);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->syncRoles([$request->role]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User role updated successfully',
+            'user' => $user->load('roles:id,name')
+        ]);
+    }
+
+    public function createUser(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|min:3|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'adress' => 'nullable|string|max:255',
+            'phone_number' => 'nullable|string|max:20',
+            'role' => 'required|exists:roles,name'
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'adress' => $request->adress,
+            'phone_number' => $request->phone_number,
+            'email_verified_at' => now()
+        ]);
+
+        $user->assignRole($request->role);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User created successfully',
+            'user' => $this->userWithRoles($user)
+        ], 201);
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User deleted successfully'
+        ]);
+    }
+
+    public function rolesAndPermissions()
+    {
+        return response()->json([
+            'status' => 'success',
+            'roles' => Role::with('permissions:id,name')->get(['id', 'name']),
+            'permissions' => Permission::get(['id', 'name'])
+        ]);
     }
     //get user profile 
     public function profile(Request $request)
@@ -332,8 +416,10 @@ class AuthController extends Controller
             'email',
             'adress',
             'phone_number',
-            'image'
+            'image',
+            'avatar'
         )
+            ->with('roles:id,name')
             ->where('id', $user->id)->first();
 
         return response()->json([

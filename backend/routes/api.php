@@ -8,6 +8,11 @@ use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\AI\FeedbackController;
 use App\Http\Controllers\AI\DishAssistantController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\DishController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\ReviewController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -28,6 +33,13 @@ Route::get('/tags', [TagController::class, 'index']);
 //dish assistant filtering
 Route::get('/ai/dishes/filter', [DishAssistantController::class, 'filter']);
 Route::post('/ai/assistant/chat', [DishAssistantController::class, 'chat']);
+//categories
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{id}', [CategoryController::class, 'show']);
+
+//dishes
+Route::get('/dishes', [DishController::class, 'index']);
+Route::get('/dishes/{id}', [DishController::class, 'show']);
 
 
 #PROTECTED ROUTES --> USER ONLY ----------------------------------
@@ -46,6 +58,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites', [FavoriteController::class, 'index']);
     Route::post('/favorites', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{dishId}', [FavoriteController::class, 'destroy']);
+
+    //cart
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart', [CartController::class, 'store']);
+    Route::patch('/cart/items/{id}', [CartController::class, 'update']);
+    Route::delete('/cart/items/{id}', [CartController::class, 'destroy']);
+    Route::delete('/cart', [CartController::class, 'clear']);
+
+    //orders
+    Route::middleware('permission:make-order')->group(function () {
+        Route::get('/my-orders', [OrderController::class, 'userOrders']);
+        Route::post('/orders', [OrderController::class, 'store']);
+    });
+
+    //reviews
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 });
 
 ## PROTECTED ROUTES -->
@@ -60,7 +89,54 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     //----USERS HANDLING----
-    Route::get('/all-users', [AuthController::class, 'getAllUsers']);
+    Route::middleware('permission:manage-users')->group(function () {
+        Route::get('/all-users', [AuthController::class, 'getAllUsers']);
+        Route::post('/users', [AuthController::class, 'createUser']);
+        Route::patch('/users/{id}/role', [AuthController::class, 'updateUserRole']);
+        Route::delete('/users/{id}', [AuthController::class, 'deleteUser']);
+    });
+
+    //----ROLES AND PERMISSIONS----
+    Route::middleware('permission:manage-roles')->group(function () {
+        Route::get('/roles-permissions', [AuthController::class, 'rolesAndPermissions']);
+    });
+
+    //----CATEGORIES----
+    Route::middleware('permission:manage-categories')->group(function () {
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::patch('/categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    });
+
+    //----DISHES----
+    Route::middleware('permission:manage-dishes|manage-dishs')->group(function () {
+        Route::post('/dishes', [DishController::class, 'store']);
+        Route::patch('/dishes/{id}', [DishController::class, 'update']);
+        Route::delete('/dishes/{id}', [DishController::class, 'destroy']);
+    });
+
+    //----ORDERS----
+    Route::middleware('permission:manage-orders')->group(function () {
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{id}', [OrderController::class, 'show']);
+        Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    });
+
+    Route::middleware('permission:mark-ready')->group(function () {
+        Route::patch('/orders/{id}/ready', [OrderController::class, 'markReady']);
+    });
+
+    // Route::middleware('permission:take-delivery')->group(function () {
+    //     Route::patch('/orders/{id}/take-delivery', [OrderController::class, 'takeDelivery']);
+    // });
+    // Route::middleware('permission:mark-delivered')->group(function () {
+    //     Route::patch('/orders/{id}/delivered', [OrderController::class, 'markDelivered']);
+    // });
+
+    //----REVIEWS----
+    Route::middleware('permission:manage-reviews')->group(function () {
+        Route::get('/reviews', [ReviewController::class, 'index']);
+    });
 
     //----RESERVATIONS----
     Route::middleware('permission:make-reservation')->group(function () {

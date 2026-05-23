@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #c8922a;
+  --color-gold-light: #e8b94f;
+  --color-gold-pale: #f5e6c8;
+  --color-brown-dark: #1a0f00;
+  --color-brown: #3d2b10;
+  --color-brown-mid: #6b4b25;
+  --color-cream: #faf5ec;
+  --color-beige: #ede0cc;
+  --color-text-dark: #1a0f00;
+  --color-text-mid: #5c4033;
+  
+  --shadow-custom: 0 4px 24px rgba(26, 15, 0, 0.09);
+  --shadow-custom-md: 0 8px 40px rgba(26, 15, 0, 0.13);
+  --shadow-custom-lg: 0 20px 60px rgba(26, 15, 0, 0.18);
+  
+  --radius-custom: 18px;
+  --radius-custom-sm: 12px;
+}
+
+:root {
+  --gold: #c8922a;
+  --gold-light: #e8b94f;
+  --gold-pale: #f5e6c8;
+  --brown-dark: #1a0f00;
+  --brown: #3d2b10;
+  --brown-mid: #6b4b25;
+  --cream: #faf5ec;
+  --beige: #ede0cc;
+  --white: #ffffff;
+  --text-dark: #1a0f00;
+  --text-mid: #5c4033;
+  --shadow: 0 4px 24px rgba(26, 15, 0, 0.09);
+  --shadow-md: 0 8px 40px rgba(26, 15, 0, 0.13);
+  --shadow-lg: 0 20px 60px rgba(26, 15, 0, 0.18);
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  background-color: var(--cream);
+  color: var(--text-dark);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Animations from mockup */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes robotFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-18px);
+  }
+}
+
+@keyframes eyeBlink {
+  0%, 96%, 100% {
+    transform: scaleY(1);
+  }
+  97%, 99% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes antennaPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(-50%) scale(0.7);
+  }
+}
+
+@keyframes screenFlicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes armSwingL {
+  0%, 100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
+@keyframes armSwingR {
+  0%, 100% {
+    transform: rotate(8deg);
+  }
+  50% {
+    transform: rotate(-12deg);
+  }
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bobble {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes galleryScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.3rem;
+  border-radius: 50px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.22s;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: white;
+  box-shadow: 0 4px 14px rgba(200, 146, 42, 0.35);
+}
+
+.btn-gold:hover {
+  background: var(--brown);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-dark {
+  background: var(--brown-dark);
+  color: white;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.btn-dark:hover {
+  background: var(--gold);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+}
+
+.btn-outline:hover {
+  background: var(--gold);
+  color: white;
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s, transform 0.7s;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scrollbar utilities */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
