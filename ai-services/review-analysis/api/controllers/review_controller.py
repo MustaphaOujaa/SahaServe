@@ -2,12 +2,11 @@ from services.openrouter_service import analyze_review_with_openrouter
 from fastapi import HTTPException
 
 def analyze_review(data):
-    text = data.text
+    reviews = data.reviews
 
-    result = analyze_review_with_openrouter(text)
+    result = analyze_review_with_openrouter(reviews)
 
     if "error" in result:
-        # Check for specific errors like Quota
         if result.get("error") == "QUOTA_EXCEEDED":
             raise HTTPException(status_code=429, detail=result.get("message"))
         

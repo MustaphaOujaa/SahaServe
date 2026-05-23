@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\AI\FeedbackController;
+use App\Http\Controllers\AI\DishAssistantController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DishController;
 use App\Http\Controllers\Api\OrderController;
@@ -28,6 +30,9 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 //tags
 Route::get('/tags', [TagController::class, 'index']);
 
+//dish assistant filtering
+Route::get('/ai/dishes/filter', [DishAssistantController::class, 'filter']);
+Route::post('/ai/assistant/chat', [DishAssistantController::class, 'chat']);
 //categories
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
@@ -153,6 +158,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/tables/{id}', [TableController::class, 'destroy']);
         // Route::patch('/tables/{id}/availability', [TableController::class, 'changeAvailablity']);
     });
+});
 
+// ADMIN ONLY-----------------------------------------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('role:admin')->group(function () {
 
+        //----FEEDBACKS (AI Analysis)------------------------------------
+        Route::get('/feedbacks', [FeedbackController::class, 'index']);
+        Route::get('/feedbacks/{id}', [FeedbackController::class, 'show']);
+    });
 });
