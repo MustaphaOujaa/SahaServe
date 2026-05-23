@@ -124,7 +124,8 @@ class DishAssistantController extends Controller
 
         try {
             $response = \Illuminate\Support\Facades\Http::post($assistantUrl, [
-                'message' => $message
+                'message' => $message,
+                'auth_token' => $request->bearerToken()
             ]);
 
             if ($response->successful()) {
