@@ -39,10 +39,10 @@ ai-services/   FastAPI AI services
 For first-time setup on Windows, run:
 
 ```bat
-runFirstTime.bat
+./runFirstTime.bat
 ```
 
-This installs frontend, backend, and AI service dependencies, runs Laravel migrations, generates the app key, and starts all services.
+This installs frontend, backend, and AI service dependencies, generates the Laravel app key, runs migrations, seeds test data/accounts, and starts all services.
 
 Manual setup:
 
@@ -52,6 +52,7 @@ composer install
 copy .env.example .env
 php artisan key:generate
 php artisan migrate
+php artisan db:seed
 
 cd ../frontend
 npm install
@@ -68,7 +69,7 @@ pip install fastapi uvicorn python-dotenv groq
 After setup, start all services with:
 
 ```bat
-run.bat
+./run.bat
 ```
 
 Default local URLs:
@@ -82,8 +83,7 @@ Default local URLs:
 
 Important environment values:
 
-- Backend: configure `backend/.env` for database, mail, Sanctum, and Google auth 
+- Backend: configure `backend/.env` for database, mail, Sanctum, and Google auth
 - Frontend: `VITE_API_URL`, optional `VITE_REVIEW_ANALYSIS_URL`
 - Smart order assistant: `GROQ_API_KEY`, optional `LARAVEL_API_URL`
 - Review analysis: `OPENROUTER_API_KEY`
-

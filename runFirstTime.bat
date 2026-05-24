@@ -8,7 +8,7 @@ cd ..
 
 :: Backend
 cd backend
-start cmd /k " composer install && php artisan migrate && php artisan key:generate && php artisan serve"
+start cmd /k "composer install && php artisan key:generate && php artisan migrate && php artisan db:seed && php artisan serve"
 cd ..
 
 :: Ai services
