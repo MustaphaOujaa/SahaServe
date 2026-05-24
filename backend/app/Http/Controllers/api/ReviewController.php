@@ -8,11 +8,19 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Review::with(['user:id,name,email', 'dish:id,name'])->latest();
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $perPage = min((int) $request->input('per_page', 10), 200);
+
         return response()->json([
             'success' => true,
-            'data' => Review::with(['user:id,name,email', 'dish:id,name'])->latest()->paginate(10)
+            'data' => $query->paginate($perPage)
         ]);
     }
 
