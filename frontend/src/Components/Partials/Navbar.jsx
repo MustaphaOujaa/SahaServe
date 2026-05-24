@@ -86,10 +86,7 @@ const Navbar = () => {
           <div className="flex gap-[0.7rem] items-center">
             {user && !isAdmin && (
               <div className="hidden md:flex gap-[0.7rem]">
-                <Link to="/notifications" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
-                  <i className="fas fa-bell"></i>
-                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-gold text-white text-[0.62rem] font-bold flex items-center justify-center">2</span>
-                </Link>
+
                 <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
                   <i className="fas fa-heart"></i>
                   <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{favCount}</span>
@@ -158,10 +155,7 @@ const Navbar = () => {
         <div className="md:hidden absolute top-[100%] left-0 right-0 bg-[rgba(250,245,236,0.98)] backdrop-blur-[24px] border-b border-gold/20 shadow-custom-lg p-6 flex flex-col gap-4 z-[999] animate-[fadeUp_0.25s_ease_both]">
           {user && !isAdmin && (
             <div className="flex gap-2 mb-4">
-              <Link to="/notifications" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
-                <i className="fas fa-bell"></i>
-                <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-gold text-white text-[0.62rem] font-bold flex items-center justify-center">2</span>
-              </Link>
+
               <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
                 <i className="fas fa-heart"></i>
                 <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{favCount}</span>
