@@ -1,22 +1,69 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import DishCard from '../Components/DishCard';
-import { useGetDishQuery, useGetDishesQuery } from '../redux/api/apiSlice';
+import { 
+  useGetDishQuery, 
+  useGetDishesQuery, 
+  useAddToCartMutation, 
+  useAddFavoriteMutation, 
+  useRemoveFavoriteMutation, 
+  useGetFavoritesQuery 
+} from '../redux/api/apiSlice';
 import { normalizeDish } from '../utils/menuTransforms';
+import { toast } from 'react-hot-toast';
 
 const ShowDishPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState('description'); // description | reviews
+  const [mainImageIndex, setMainImageIndex] = useState(0);
   const { data: backendDish, isLoading, isError } = useGetDishQuery(id);
   const { data: dishes = [] } = useGetDishesQuery();
   const dish = useMemo(() => backendDish ? normalizeDish(backendDish) : null, [backendDish]);
   const menuDishes = useMemo(() => dishes.map(normalizeDish), [dishes]);
 
+  const token = localStorage.getItem('auth_token');
+  const isLoggedIn = !!token;
+  const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn });
+  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const [addFavorite, { isLoading: isAddingFav }] = useAddFavoriteMutation();
+  const [removeFavorite, { isLoading: isRemovingFav }] = useRemoveFavoriteMutation();
+
+  const isFav = dish ? favoritesData.some(f => f.id === dish.id) : false;
+
+  const handleToggleFav = async (e) => {
+    e.preventDefault();
+    if (!isLoggedIn) return navigate('/login');
+    try {
+      if (isFav) {
+        await removeFavorite(dish.id).unwrap();
+        toast.success("Removed from favorites");
+      } else {
+        await addFavorite(dish.id).unwrap();
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.data?.message || "Failed to update favorites");
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!isLoggedIn) return navigate('/login');
+    try {
+      await addToCart({ dish_id: dish.id, quantity: qty }).unwrap();
+      toast.success("Added to cart!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.data?.message || "Failed to add to cart");
+    }
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     setQty(1);
+    setMainImageIndex(0);
   }, [id]);
 
   useEffect(() => {
@@ -63,29 +110,56 @@ const ShowDishPage = () => {
 
         {/* Dish Hero */}
         <div className="bg-white rounded-[24px] shadow-custom p-6 md:p-10 flex flex-col md:flex-row gap-10 mb-12 animate-[fadeUp_0.4s_ease_both]">
-          {/* Image */}
-          <div className="w-full md:w-1/2 relative rounded-[16px] overflow-hidden group">
-            <img 
-              src={dish.image} 
-              alt={dish.name} 
-              className="w-full h-full object-cover min-h-[300px] md:min-h-[400px] transition-transform duration-700 group-hover:scale-105" 
-            />
-            <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-              {dish.badges.map((b, i) => (
-                <span key={i} className={`px-3 py-1 rounded-full text-[0.75rem] font-bold tracking-[0.05em] uppercase text-white shadow-md ${
-                  b === "Chef's Pick" ? 'bg-gold' : 
-                  b === "Vegan" ? 'bg-[#27ae60]' : 
-                  b === "Spicy" ? 'bg-[#e74c3c]' : 
-                  b === "Popular" ? 'bg-brown-dark text-gold-light' : 
-                  b === "New" ? 'bg-[#9b59b6]' : 'bg-gold'
-                }`}>
-                  {b}
-                </span>
-              ))}
+          {/* Image & Thumbnails */}
+          <div className="w-full md:w-1/2 flex flex-col gap-4">
+            <div className="w-full relative rounded-[16px] overflow-hidden group">
+              <img 
+                src={dish.images?.[mainImageIndex] || dish.image} 
+                alt={dish.name} 
+                className="w-full h-full object-cover min-h-[300px] md:min-h-[400px] transition-transform duration-700 group-hover:scale-105" 
+              />
+              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                {dish.badges.map((b, i) => (
+                  <span key={i} className={`px-3 py-1 rounded-full text-[0.75rem] font-bold tracking-[0.05em] uppercase text-white shadow-md ${
+                    b === "Chef's Pick" ? 'bg-gold' : 
+                    b === "Vegan" ? 'bg-[#27ae60]' : 
+                    b === "Spicy" ? 'bg-[#e74c3c]' : 
+                    b === "Popular" ? 'bg-brown-dark text-gold-light' : 
+                    b === "New" ? 'bg-[#9b59b6]' : 'bg-gold'
+                  }`}>
+                    {b}
+                  </span>
+                ))}
+              </div>
+              <button 
+                onClick={handleToggleFav}
+                disabled={isAddingFav || isRemovingFav}
+                className={`absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md transition-colors cursor-pointer z-10 disabled:opacity-70 disabled:cursor-not-allowed ${isFav ? 'text-[#e74c3c] hover:text-[#c0392b]' : 'text-text-mid hover:text-[#e74c3c]'}`}
+              >
+                {isAddingFav || isRemovingFav ? (
+                  <i className="fas fa-spinner fa-spin text-lg"></i>
+                ) : isFav ? (
+                  <i className="fas fa-trash-can text-lg"></i>
+                ) : (
+                  <i className="far fa-heart text-lg"></i>
+                )}
+              </button>
             </div>
-            <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm text-text-mid flex items-center justify-center hover:text-[#e74c3c] shadow-md transition-colors">
-              <i className="far fa-heart text-lg"></i>
-            </button>
+            
+            {/* Thumbnails */}
+            {dish.images && dish.images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {dish.images.slice(0, 5).map((img, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => setMainImageIndex(idx)}
+                    className={`relative w-20 h-20 flex-shrink-0 rounded-[12px] overflow-hidden border-2 transition-all cursor-pointer ${mainImageIndex === idx ? 'border-gold opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
+                  >
+                    <img src={img} alt={`${dish.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Info */}
@@ -152,10 +226,16 @@ const ShowDishPage = () => {
                 
                 <button
                   type="button"
-                  className="inline-flex h-12 min-w-[170px] items-center justify-center gap-2 rounded-full bg-gold px-7 text-white font-bold text-[0.95rem] leading-none shadow-[0_4px_14px_rgba(200,146,42,0.35)] hover:bg-brown transition-all cursor-pointer whitespace-nowrap"
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  className="inline-flex h-12 min-w-[170px] items-center justify-center gap-2 rounded-full bg-gold px-7 text-white font-bold text-[0.95rem] leading-none shadow-[0_4px_14px_rgba(200,146,42,0.35)] hover:bg-brown transition-all cursor-pointer whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <i className="fas fa-shopping-bag text-[0.95rem]"></i>
-                  <span>Add to Cart</span>
+                  {isAddingToCart ? (
+                    <i className="fas fa-spinner fa-spin text-[0.95rem]"></i>
+                  ) : (
+                    <i className="fas fa-shopping-bag text-[0.95rem]"></i>
+                  )}
+                  <span>{isAddingToCart ? 'Adding...' : 'Add to Cart'}</span>
                 </button>
               </div>
             </div>

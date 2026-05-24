@@ -1,41 +1,57 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const INITIAL_CART = [
-  {
-    id: 1,
-    name: "Royal Lamb Tagine",
-    description: "Slow-cooked lamb with prunes, almonds, and saffron. A true Moroccan classic.",
-    price: 24.50,
-    qty: 1,
-    image: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=400&q=80"
-  }
-];
+import { useGetCartQuery, useUpdateCartItemMutation, useRemoveFromCartMutation } from '../redux/api/apiSlice';
+import { normalizeDish } from '../utils/menuTransforms';
 
 const CartPage = () => {
-  const [cart, setCart] = useState(INITIAL_CART);
+  const { data: cartData, isLoading, isError } = useGetCartQuery();
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  
   const [orderType, setOrderType] = useState('home'); // 'home' or 'site'
   const [paymentMethod, setPaymentMethod] = useState('visa');
 
-  const updateQty = (id, delta) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        return { ...item, qty: Math.max(1, item.qty + delta) };
-      }
-      return item;
-    }));
+  const updateQty = async (id, currentQty, delta) => {
+    const newQty = currentQty + delta;
+    if (newQty < 1) return;
+    try {
+      await updateCartItem({ itemId: id, quantity: newQty }).unwrap();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const removeItem = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const removeItem = async (id) => {
+    try {
+      await removeFromCart(id).unwrap();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream pt-[72px]">
+        <div className="py-20 flex flex-col items-center text-center">
+          <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
+          <p className="text-text-mid text-[0.9rem]">Loading your cart...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const cartItems = cartData?.items || [];
+  const normalizedItems = cartItems.map(item => ({
+    ...item,
+    dish: normalizeDish(item.dish)
+  }));
+
+  const subtotal = normalizedItems.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
   const serviceFee = 2.00;
   const tax = subtotal * 0.1;
   const total = subtotal + serviceFee + tax;
 
-  if (cart.length === 0) {
+  if (isError || normalizedItems.length === 0) {
     return (
       <div className="min-h-screen bg-cream pt-32 pb-20 px-[5%] flex flex-col items-center justify-center text-center">
         <div className="w-24 h-24 rounded-full bg-gold-pale flex items-center justify-center mb-8">
@@ -71,32 +87,32 @@ const CartPage = () => {
             </div>
 
             <div className="flex flex-col">
-              {cart.map(item => (
+              {normalizedItems.map(item => (
                 <div key={item.id} className="flex flex-wrap sm:flex-nowrap gap-6 py-6 border-b border-beige last:border-none">
-                  <img src={item.image} alt={item.name} className="w-[100px] h-[100px] rounded-[18px] object-cover shrink-0" />
+                  <img src={item.dish.image} alt={item.dish.name} className="w-[100px] h-[100px] rounded-[18px] object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-['Cormorant_Garamond'] text-[1.4rem] font-bold text-brown-dark truncate">{item.name}</h3>
+                      <h3 className="font-['Cormorant_Garamond'] text-[1.4rem] font-bold text-brown-dark truncate">{item.dish.name}</h3>
                       <button 
-                        className="text-[#e74c3c] text-[0.8rem] flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-all"
+                        className="text-[#e74c3c] text-[0.8rem] flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-all cursor-pointer"
                         onClick={() => removeItem(item.id)}
                       >
                         <i className="fas fa-trash-can"></i> Remove
                       </button>
                     </div>
-                    <p className="text-text-mid text-[0.85rem] mb-4 line-clamp-2">{item.description}</p>
+                    <p className="text-text-mid text-[0.85rem] mb-4 line-clamp-2">{item.dish.description}</p>
                     
                     <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-4 bg-cream px-3.5 py-1.5 rounded-full">
-                        <button className="text-gold hover:scale-120 transition-transform" onClick={() => updateQty(item.id, -1)}>
+                        <button className="text-gold hover:scale-120 transition-transform cursor-pointer" onClick={() => updateQty(item.id, item.quantity, -1)}>
                           <i className="fas fa-minus text-[0.7rem]"></i>
                         </button>
-                        <span className="font-bold text-[0.9rem] min-w-[20px] text-center">{item.qty}</span>
-                        <button className="text-gold hover:scale-120 transition-transform" onClick={() => updateQty(item.id, 1)}>
+                        <span className="font-bold text-[0.9rem] min-w-[20px] text-center">{item.quantity}</span>
+                        <button className="text-gold hover:scale-120 transition-transform cursor-pointer" onClick={() => updateQty(item.id, item.quantity, 1)}>
                           <i className="fas fa-plus text-[0.7rem]"></i>
                         </button>
                       </div>
-                      <span className="text-gold font-bold text-[1.1rem]">${(item.price * item.qty).toFixed(2)}</span>
+                      <span className="text-gold font-bold text-[1.1rem]">${(item.dish.price * item.quantity).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

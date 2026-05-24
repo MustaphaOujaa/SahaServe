@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAddFavoriteMutation, useRemoveFavoriteMutation, useAddToCartMutation } from '../redux/api/apiSlice';
+import { toast } from 'react-hot-toast';
 
 const DishCard = ({ 
   id,
@@ -13,10 +15,48 @@ const DishCard = ({
   reviews = 120,
   time = '20 min',
   weight = 'Medium',
-  onAddToCart,
-  onToggleFav
+  isFavourite = false,
 }) => {
-  const [isFav, setIsFav] = useState(false);
+  const [isFav, setIsFav] = useState(isFavourite);
+  const [addFavorite, { isLoading: isAddingFav }] = useAddFavoriteMutation();
+  const [removeFavorite, { isLoading: isRemovingFav }] = useRemoveFavoriteMutation();
+  const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
+
+  useEffect(() => {
+    setIsFav(isFavourite);
+  }, [isFavourite]);
+
+  const handleToggleFav = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      if (isFav) {
+        setIsFav(false);
+        await removeFavorite(id).unwrap();
+        toast.success("Removed from favorites");
+      } else {
+        setIsFav(true);
+        await addFavorite(id).unwrap();
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      setIsFav(!isFav);
+      console.error(err);
+      toast.error(err.data?.message || "Failed to update favorites");
+    }
+  };
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await addToCart({ dish_id: id, quantity: 1 }).unwrap();
+      toast.success("Added to cart!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.data?.message || "Failed to add to cart");
+    }
+  };
   
   // Convert a single badge string to an array for compatibility with the mockup mapping
   const badges = badgeList?.length ? badgeList : (badge ? [badge] : []);
@@ -43,15 +83,15 @@ const DishCard = ({
           ))}
         </div>
         <button 
-          className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transition-all duration-200 z-10 ${isFav ? 'text-[#e74c3c]' : 'text-text-mid hover:text-[#e74c3c]'}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsFav(!isFav);
-            if (onToggleFav) onToggleFav(!isFav);
-          }}
+          className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transition-all duration-200 z-10 disabled:opacity-70 disabled:cursor-not-allowed ${isFav ? 'text-[#e74c3c]' : 'text-text-mid hover:text-[#e74c3c]'}`}
+          onClick={handleToggleFav}
+          disabled={isAddingFav || isRemovingFav}
         >
-          <i className={`${isFav ? 'fas' : 'far'} fa-heart`}></i>
+          {isAddingFav || isRemovingFav ? (
+            <i className="fas fa-spinner fa-spin"></i>
+          ) : (
+            <i className={`${isFav ? 'fas' : 'far'} fa-heart`}></i>
+          )}
         </button>
       </div>
 
@@ -80,14 +120,11 @@ const DishCard = ({
             <span className="text-text-mid font-normal text-[0.72rem]">({reviews} reviews)</span>
           </div>
           <button 
-            className="w-9 h-9 rounded-full bg-gold text-white flex items-center justify-center shadow-[0_3px_12px_rgba(200,146,42,0.4)] hover:bg-brown-dark hover:scale-110 transition-all duration-200 z-10"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onAddToCart) onAddToCart();
-            }}
+            className="w-9 h-9 rounded-full bg-gold text-white flex items-center justify-center shadow-[0_3px_12px_rgba(200,146,42,0.4)] hover:bg-brown-dark hover:scale-110 transition-all duration-200 z-10 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            onClick={handleAddToCart}
+            disabled={isAdding}
           >
-            <i className="fas fa-plus"></i>
+            {isAdding ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-plus"></i>}
           </button>
         </div>
       </div>

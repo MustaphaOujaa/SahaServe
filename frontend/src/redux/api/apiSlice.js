@@ -13,7 +13,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Profile', 'Users', 'Roles', 'Orders', 'Reservations', 'Tables', 'Dishes', 'Categories', 'Tags'],
+  tagTypes: ['Profile', 'Users', 'Roles', 'Orders', 'Reservations', 'Tables', 'Dishes', 'Categories', 'Tags', 'Cart', 'Favorites'],
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => '/profile',
@@ -246,6 +246,61 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Tags', 'Dishes'],
     }),
+    getCart: builder.query({
+      query: () => '/cart',
+      providesTags: ['Cart'],
+      transformResponse: (response) => response.data,
+    }),
+    addToCart: builder.mutation({
+      query: (data) => ({
+        url: '/cart',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Cart'],
+    }),
+    updateCartItem: builder.mutation({
+      query: ({ itemId, quantity }) => ({
+        url: `/cart/items/${itemId}`,
+        method: 'PATCH',
+        body: { quantity },
+      }),
+      invalidatesTags: ['Cart'],
+    }),
+    removeFromCart: builder.mutation({
+      query: (itemId) => ({
+        url: `/cart/items/${itemId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Cart'],
+    }),
+    clearCart: builder.mutation({
+      query: () => ({
+        url: '/cart',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Cart'],
+    }),
+    getFavorites: builder.query({
+      query: () => '/favorites',
+      providesTags: ['Favorites'],
+      transformResponse: (response) => response.data,
+    }),
+    addFavorite: builder.mutation({
+      query: (dishId) => ({
+        url: '/favorites',
+        method: 'POST',
+        body: { dish_id: dishId },
+      }),
+      invalidatesTags: ['Favorites'],
+    }),
+    removeFavorite: builder.mutation({
+      query: (dishId) => ({
+        url: `/favorites/${dishId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Favorites'],
+    }),
   }),
 });
 
@@ -281,4 +336,12 @@ export const {
   useCreateTagMutation,
   useUpdateTagMutation,
   useDeleteTagMutation,
+  useGetCartQuery,
+  useAddToCartMutation,
+  useUpdateCartItemMutation,
+  useRemoveFromCartMutation,
+  useClearCartMutation,
+  useGetFavoritesQuery,
+  useAddFavoriteMutation,
+  useRemoveFavoriteMutation,
 } = apiSlice;
