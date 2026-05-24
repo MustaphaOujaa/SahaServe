@@ -11,9 +11,12 @@ class TableController extends Controller
     /**
      * Display a listing of the tables.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tables = Table::all();
+        $tables = Table::when($request->boolean('available'), function ($query) {
+            $query->where('is_available', true);
+        })->get();
+
         return response()->json([
             'success' => true,
             'data' => $tables

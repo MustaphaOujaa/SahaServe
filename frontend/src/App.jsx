@@ -6,7 +6,6 @@ import RegisterPage from "./Pages/RegisterPage";
 import LoginPage from "./Pages/LoginPage";
 import Soa from "./Components/Soa";
 import MenuPage from "./pages/MenuPage";
-import NotificationsPage from "./pages/NotificationsPage";
 import FavouritesPage from "./pages/FavouritesPage";
 import CartPage from "./pages/CartPage";
 import AboutPage from "./pages/AboutPage";
@@ -92,7 +91,6 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/dish/:id" element={<ShowDishPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/favourites" element={<AdminRedirect><FavouritesPage /></AdminRedirect>} />
               <Route path="/cart" element={<AdminRedirect><CartPage /></AdminRedirect>} />
               <Route path="/about" element={<AboutPage />} />

@@ -111,7 +111,7 @@ export const apiSlice = createApi({
       invalidatesTags: ['Reservations'],
     }),
     getTables: builder.query({
-      query: () => '/tables',
+      query: (availableOnly = false) => availableOnly ? '/tables?available=1' : '/tables',
       providesTags: ['Tables'],
       transformResponse: (response) => response.data,
     }),
@@ -281,6 +281,19 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Cart'],
     }),
+    placeOrder: builder.mutation({
+      query: (data) => ({
+        url: '/orders',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Orders', 'Cart'],
+    }),
+    getMyOrders: builder.query({
+      query: () => '/my-orders',
+      providesTags: ['Orders'],
+      transformResponse: (response) => response.data,
+    }),
     getFavorites: builder.query({
       query: () => '/favorites',
       providesTags: ['Favorites'],
@@ -426,6 +439,8 @@ export const {
   useUpdateCartItemMutation,
   useRemoveFromCartMutation,
   useClearCartMutation,
+  usePlaceOrderMutation,
+  useGetMyOrdersQuery,
   useGetFavoritesQuery,
   useGetReviewsQuery,
   useAnalyzeReviewsQuery,
