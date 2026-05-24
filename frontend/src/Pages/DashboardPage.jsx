@@ -20,6 +20,7 @@ import {
   useGetTablesQuery,
   useGetTagsQuery,
   useGetUsersQuery,
+  useAnalyzeReviewsQuery,
   useUpdateCategoryMutation,
   useUpdateDishMutation,
   useUpdateOrderStatusMutation,
@@ -32,13 +33,6 @@ import {
 import { ButtonSpinner, LoadingOverlay } from "../Components/UI/Loading";
 import ConfirmDialog from "../Components/UI/ConfirmDialog";
 
-const metrics = [
-  { label: "Revenue", value: "$4,820", icon: "fa-chart-line", tone: "gold", detail: "+12% this week" },
-  { label: "Orders", value: "38", icon: "fa-receipt", tone: "brown", detail: "9 pending" },
-  { label: "Reservations", value: "16", icon: "fa-calendar-check", tone: "green", detail: "5 tonight" },
-  { label: "Active Tables", value: "12/18", icon: "fa-chair", tone: "red", detail: "6 unavailable" },
-];
-
 const sections = [
   { id: "overview", label: "Overview", icon: "fa-border-all" },
   { id: "users", label: "Users", icon: "fa-users" },
@@ -50,48 +44,115 @@ const sections = [
   { id: "roles", label: "Roles", icon: "fa-shield-alt" },
 ];
 
-const reviewAnalyses = [
-  {
-    review: "The food was excellent and warm, but delivery arrived late and the driver forgot one drink.",
-    sentiment: "positive",
-    confidence: 0.86,
-    aspects: {
-      food: "positive",
-      service: "neutral",
-      delivery: "negative",
-      price: "N/A",
-      cleanliness: "N/A",
-    },
-    key_points: ["Excellent warm food", "Delivery arrived late", "One drink was missing"],
-    main_issue: "Late delivery with a missing item",
-    category: "Moroccan restaurant",
-    business_insight: {
-      main_problem: "Delivery handoff and order verification are inconsistent during busy periods.",
-      recommendation: "Add a final bag checklist before dispatch and flag late deliveries for staff follow-up.",
-    },
-    severity_score: 6.4,
-  },
-  {
-    review: "The couscous tasted fresh, service was kind, and the restaurant was very clean.",
-    sentiment: "positive",
-    confidence: 0.94,
-    aspects: {
-      food: "positive",
-      service: "positive",
-      delivery: "N/A",
-      price: "neutral",
-      cleanliness: "positive",
-    },
-    key_points: ["Fresh couscous", "Kind service", "Clean dining room"],
-    main_issue: null,
-    category: "Moroccan restaurant",
-    business_insight: {
-      main_problem: "No critical issue detected in this review.",
-      recommendation: "Use this feedback in staff recognition and promote couscous as a reliable customer favorite.",
-    },
-    severity_score: 1.2,
-  },
-];
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const sameDay = (value, date) => {
+  if (!date) return true;
+  if (!value) return false;
+  return value.slice(0, 10) === date;
+};
+
+const escapePdfText = (value) =>
+  String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[^\x00-\x7F]/g, "?")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/[\r\n]+/g, " ");
+
+const wrapText = (value, maxLength = 86) => {
+  const words = String(value ?? "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+
+  words.forEach((word) => {
+    const nextLine = line ? `${line} ${word}` : word;
+    if (nextLine.length > maxLength) {
+      if (line) lines.push(line);
+      line = word;
+    } else {
+      line = nextLine;
+    }
+  });
+
+  if (line) lines.push(line);
+  return lines.length ? lines : [""];
+};
+
+const downloadTextPdf = ({ title, subtitle, sections: pdfSections, fileName }) => {
+  const pageHeight = 792;
+  const pages = [[`BT /F1 18 Tf 50 742 Td (${escapePdfText(title)}) Tj`]];
+  let y = 718;
+
+  const addLine = (text, size = 10, indent = 0) => {
+    if (y < 54) {
+      pages[pages.length - 1].push("ET");
+      y = 742;
+      pages.push([`BT /F1 ${size} Tf ${50 + indent} ${y} Td (${escapePdfText(text)}) Tj`]);
+      y -= 16;
+      return;
+    }
+
+    pages[pages.length - 1].push(`/F1 ${size} Tf ${50 + indent} ${y} Td (${escapePdfText(text)}) Tj`);
+    y -= size + 6;
+  };
+
+  addLine(subtitle, 10);
+  addLine(`Generated: ${new Date().toLocaleString()}`, 9);
+  addLine("", 8);
+
+  pdfSections.forEach((section) => {
+    addLine(section.heading, 13);
+    section.lines.forEach((line) => {
+      wrapText(line, 92).forEach((wrappedLine) => addLine(wrappedLine, 9, 10));
+    });
+    addLine("", 8);
+  });
+
+  pages[pages.length - 1].push("ET");
+  const pageObjects = [];
+  const contentObjects = [];
+  const objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "",
+    "3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+  ];
+
+  pages.forEach((pageLines, index) => {
+    const pageObjectId = 4 + index * 2;
+    const contentObjectId = pageObjectId + 1;
+    const stream = pageLines.join("\n");
+    pageObjects.push(`${pageObjectId} 0 R`);
+    contentObjects.push(
+      `${pageObjectId} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >> endobj`,
+      `${contentObjectId} 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
+    );
+  });
+
+  objects[1] = `2 0 obj << /Type /Pages /Kids [${pageObjects.join(" ")}] /Count ${pages.length} >> endobj`;
+  objects.push(...contentObjects);
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object) => {
+    offsets.push(pdf.length);
+    pdf += `${object}\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+
+  const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+};
 
 const orderStatuses = ["pending", "confirmed", "preparing", "delivered", "cancelled"];
 const reservationStatuses = ["pending", "confirmed", "cancelled", "completed", "no_show"];
@@ -300,9 +361,11 @@ function SeverityMeter({ score }) {
 }
 
 function AspectGrid({ aspects }) {
+  const safeAspects = aspects || {};
+
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-      {Object.entries(aspects).map(([aspect, value]) => (
+      {Object.entries(safeAspects).map(([aspect, value]) => (
         <div key={aspect} className="rounded-[12px] border border-beige bg-white p-3">
           <div className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-text-mid">{aspect}</div>
           <StatusBadge value={value} />
@@ -359,6 +422,8 @@ const DashboardPage = () => {
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [tagToDelete, setTagToDelete] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [exportReport, setExportReport] = useState("orders");
+  const [exportDate, setExportDate] = useState(todayIso());
   const [newTable, setNewTable] = useState({
     name: "",
     number: "",
@@ -482,6 +547,15 @@ const DashboardPage = () => {
   const [createTag, { isLoading: isCreatingTag }] = useCreateTagMutation();
   const [updateTag, { isLoading: isUpdatingTag }] = useUpdateTagMutation();
   const [deleteTag, { isLoading: isDeletingTag }] = useDeleteTagMutation();
+  const shouldLoadReviewAnalysis = activeSection === "overview" || activeSection === "ai-services" || exportReport === "review-analysis";
+  const {
+    data: reviewAnalysisResponse,
+    isLoading: isReviewAnalysisLoading,
+    isFetching: isReviewAnalysisFetching,
+    isError: isReviewAnalysisError,
+    error: reviewAnalysisError,
+    refetch: refetchReviewAnalysis,
+  } = useAnalyzeReviewsQuery({ date: exportReport === "review-analysis" ? exportDate : undefined }, { skip: !shouldLoadReviewAnalysis });
 
   const adminUsers = usersResponse?.data || [];
   const paginationLinks = usersResponse?.links || [];
@@ -493,11 +567,43 @@ const DashboardPage = () => {
   const isRolesBusy = isRolesLoading || isRolesFetching;
   const adminTags = tagsResponse?.data || [];
   const isMenuBusy = isDishesLoading || isDishesFetching || isCategoriesLoading || isCategoriesFetching || isTagsLoading || isTagsFetching;
+  const reviewAnalysis = reviewAnalysisResponse?.analysis;
+  const analyzedReviews = reviewAnalysisResponse?.reviews || [];
+  const isReviewAnalysisBusy = isReviewAnalysisLoading || isReviewAnalysisFetching;
+  const pendingOrdersCount = adminOrders.filter((order) => order.status === "pending").length;
+  const todayReservationsCount = adminReservations.filter((reservation) => sameDay(reservation.reservation_date, todayIso())).length;
+  const unavailableTablesCount = adminTables.filter((table) => !table.is_available).length;
+  const dashboardMetrics = [
+    {
+      label: "Revenue",
+      value: formatMoney(adminOrders.reduce((sum, order) => sum + Number(order.total_price || 0), 0)),
+      icon: "fa-chart-line",
+      detail: `${adminOrders.length} order${adminOrders.length === 1 ? "" : "s"} loaded`,
+    },
+    {
+      label: "Orders",
+      value: String(adminOrders.length),
+      icon: "fa-receipt",
+      detail: `${pendingOrdersCount} pending`,
+    },
+    {
+      label: "Reservations",
+      value: String(adminReservations.length),
+      icon: "fa-calendar-check",
+      detail: `${todayReservationsCount} today`,
+    },
+    {
+      label: "Active Tables",
+      value: `${adminTables.filter((table) => table.is_available).length}/${adminTables.length}`,
+      icon: "fa-chair",
+      detail: `${unavailableTablesCount} unavailable`,
+    },
+  ];
 
-  const formatMoney = (value) => {
+  function formatMoney(value) {
     const number = Number(value || 0);
     return `$${number.toFixed(2)}`;
-  };
+  }
 
   const formatOrderItems = (items = []) => {
     if (!items.length) {
@@ -555,6 +661,98 @@ const DashboardPage = () => {
       ]),
     [activeSection, adminOrders, isUpdatingOrderStatus]
   );
+
+  const handleExportPdf = () => {
+    if (exportReport === "orders") {
+      const filteredOrders = adminOrders.filter((order) => sameDay(order.created_at, exportDate));
+      downloadTextPdf({
+        title: "Orders Report",
+        subtitle: `Orders for ${exportDate}`,
+        fileName: `orders-${exportDate}.pdf`,
+        sections: [
+          {
+            heading: "Summary",
+            lines: [
+              `Orders: ${filteredOrders.length}`,
+              `Revenue: ${formatMoney(filteredOrders.reduce((sum, order) => sum + Number(order.total_price || 0), 0))}`,
+            ],
+          },
+          {
+            heading: "Orders",
+            lines: filteredOrders.length
+              ? filteredOrders.map((order) => `#${order.id} | ${order.user?.name || "Unknown customer"} | ${formatOrderItems(order.items)} | ${formatMoney(order.total_price)} | ${order.status}`)
+              : ["No orders found for this day."],
+          },
+        ],
+      });
+      return;
+    }
+
+    if (exportReport === "reservations") {
+      const filteredReservations = adminReservations.filter((reservation) => sameDay(reservation.reservation_date, exportDate));
+      downloadTextPdf({
+        title: "Reservations Report",
+        subtitle: `Reservations for ${exportDate}`,
+        fileName: `reservations-${exportDate}.pdf`,
+        sections: [
+          {
+            heading: "Summary",
+            lines: [`Reservations: ${filteredReservations.length}`],
+          },
+          {
+            heading: "Reservations",
+            lines: filteredReservations.length
+              ? filteredReservations.map((reservation) => `${reservation.user?.name || "Guest"} | Table ${reservation.table?.number || reservation.table_id} | ${formatTimeRange(reservation)} | ${reservation.guests_number || "N/A"} guests | ${reservation.status}`)
+              : ["No reservations found for this day."],
+          },
+        ],
+      });
+      return;
+    }
+
+    if (isReviewAnalysisBusy) {
+      toast.error("Review analysis is still loading.");
+      return;
+    }
+
+    downloadTextPdf({
+      title: "Review Analysis Report",
+      subtitle: `Review analysis for ${exportDate}`,
+      fileName: `review-analysis-${exportDate}.pdf`,
+      sections: [
+        {
+          heading: "Summary",
+          lines: reviewAnalysis
+            ? [
+                `Sentiment: ${reviewAnalysis.sentiment || "N/A"}`,
+                `Confidence: ${(Number(reviewAnalysis.confidence || 0) * 100).toFixed(0)}%`,
+                `Severity: ${Number(reviewAnalysis.severity_score || 0).toFixed(1)}/10`,
+                `Reviews analyzed: ${analyzedReviews.length}`,
+                `Category: ${reviewAnalysis.category || "Restaurant"}`,
+              ]
+            : ["No review analysis available for this day."],
+        },
+        {
+          heading: "Aspects",
+          lines: reviewAnalysis?.aspects
+            ? Object.entries(reviewAnalysis.aspects).map(([aspect, value]) => `${aspect}: ${value}`)
+            : ["No aspects returned."],
+        },
+        {
+          heading: "Key Points",
+          lines: reviewAnalysis?.key_points?.length ? reviewAnalysis.key_points : ["No key points returned."],
+        },
+        {
+          heading: "Business Insight",
+          lines: [
+            `Main issue: ${reviewAnalysis?.main_issue || "No primary complaint detected"}`,
+            `Main problem: ${reviewAnalysis?.business_insight?.main_problem || "No main problem identified."}`,
+            `Recommendation: ${reviewAnalysis?.business_insight?.recommendation || "No recommendation returned."}`,
+          ],
+        },
+      ],
+    });
+  };
 
   const visibleSections = activeSection === "overview" ? sections.slice(1).map((section) => section.id) : [activeSection];
 
@@ -956,22 +1154,42 @@ const DashboardPage = () => {
                   refetchDishes();
                   refetchCategories();
                   refetchTags();
+                  if (shouldLoadReviewAnalysis) {
+                    refetchReviewAnalysis();
+                  }
                 }}
-                disabled={isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching}
+                disabled={isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching}
                 className="btn btn-gold disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching ? <ButtonSpinner /> : <i className="fas fa-sync-alt text-[0.75rem]"></i>}
-                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching ? "Refreshing" : "Refresh"}
+                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching ? <ButtonSpinner /> : <i className="fas fa-sync-alt text-[0.75rem]"></i>}
+                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching ? "Refreshing" : "Refresh"}
               </button>
-              <button className="btn bg-white/10 text-white hover:bg-white/15">
-                <i className="fas fa-download text-[0.75rem]"></i>
-                Export
-              </button>
+              <div className="flex flex-wrap items-center gap-2 rounded-full bg-white/10 p-1.5">
+                <select
+                  value={exportReport}
+                  onChange={(event) => setExportReport(event.target.value)}
+                  className="rounded-full border border-white/10 bg-brown-dark px-3 py-2 text-[0.78rem] font-semibold text-white outline-none focus:border-gold"
+                >
+                  <option value="orders">Orders</option>
+                  <option value="reservations">Reservations</option>
+                  <option value="review-analysis">Review analysis</option>
+                </select>
+                <input
+                  type="date"
+                  value={exportDate}
+                  onChange={(event) => setExportDate(event.target.value)}
+                  className="rounded-full border border-white/10 bg-brown-dark px-3 py-2 text-[0.78rem] font-semibold text-white outline-none focus:border-gold"
+                />
+                <button type="button" onClick={handleExportPdf} className="btn bg-white/10 text-white hover:bg-white/15">
+                  <i className="fas fa-download text-[0.75rem]"></i>
+                  Export PDF
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {metrics.map((metric) => (
+            {dashboardMetrics.map((metric) => (
               <div key={metric.label} className="rounded-[16px] border border-white/10 bg-white/[0.06] p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-[0.76rem] uppercase tracking-[0.14em] text-white/55">{metric.label}</span>
@@ -1625,34 +1843,49 @@ const DashboardPage = () => {
           {visibleSections.includes("ai-services") && (
             <AdminCard className="p-6">
               <SectionHeader eyebrow="AI Services" title="Review Analysis Results" />
-              <div className="mt-5 grid grid-cols-1 gap-5">
-                {reviewAnalyses.map((analysis, index) => (
-                  <div key={`${analysis.sentiment}-${index}`} className="rounded-[16px] border border-beige bg-cream/70 p-5">
+              <div className="relative mt-5 min-h-[320px]">
+                {isReviewAnalysisError ? (
+                  <div className="rounded-[12px] border border-[#e8c5bd] bg-[#f7ece9] p-5 text-[0.9rem] text-[#9b3f2f]">
+                    {reviewAnalysisError?.data?.detail || reviewAnalysisError?.data?.message || "Failed to analyze reviews. Check the review-analysis service on port 5000."}
+                  </div>
+                ) : !isReviewAnalysisBusy && !reviewAnalysis ? (
+                  <div className="rounded-[12px] border border-beige bg-cream/70 p-6 text-center">
+                    <i className="fas fa-comment-slash mb-3 text-2xl text-gold"></i>
+                    <p className="text-[0.9rem] font-semibold text-brown-dark">No reviews available for analysis yet.</p>
+                    <p className="mt-1 text-[0.82rem] text-text-mid">New customer reviews will be sent to the AI analyzer automatically.</p>
+                  </div>
+                ) : reviewAnalysis ? (
+                  <div className="rounded-[16px] border border-beige bg-cream/70 p-5">
                     <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                       <div className="max-w-[820px]">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <StatusBadge value={analysis.sentiment} />
+                          <StatusBadge value={reviewAnalysis.sentiment} />
                           <span className="rounded-full border border-beige bg-white px-3 py-1 text-[0.72rem] font-semibold text-text-mid">
-                            Confidence {(analysis.confidence * 100).toFixed(0)}%
+                            Confidence {(Number(reviewAnalysis.confidence || 0) * 100).toFixed(0)}%
                           </span>
                           <span className="rounded-full border border-beige bg-white px-3 py-1 text-[0.72rem] font-semibold text-text-mid">
-                            {analysis.category}
+                            {reviewAnalysis.category || "Restaurant"}
+                          </span>
+                          <span className="rounded-full border border-beige bg-white px-3 py-1 text-[0.72rem] font-semibold text-text-mid">
+                            {reviewAnalysisResponse.reviewCount} reviews analyzed
                           </span>
                         </div>
-                        <p className="text-[0.9rem] leading-7 text-brown-dark">"{analysis.review}"</p>
+                        <p className="text-[0.9rem] leading-7 text-brown-dark">
+                          Latest batch includes {analyzedReviews.length} recent review{analyzedReviews.length === 1 ? "" : "s"} from the backend.
+                        </p>
                       </div>
                       <div className="min-w-[180px]">
-                        <SeverityMeter score={analysis.severity_score} />
+                        <SeverityMeter score={Number(reviewAnalysis.severity_score || 0)} />
                       </div>
                     </div>
 
-                    <AspectGrid aspects={analysis.aspects} />
+                    <AspectGrid aspects={reviewAnalysis.aspects} />
 
                     <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
                       <div className="rounded-[14px] border border-beige bg-white p-5">
                         <h3 className="mb-3 text-[0.82rem] font-bold uppercase tracking-[0.14em] text-text-mid">Key Points</h3>
                         <div className="flex flex-col gap-2">
-                          {analysis.key_points.map((point) => (
+                          {(reviewAnalysis.key_points || []).map((point) => (
                             <div key={point} className="flex items-start gap-3 text-[0.86rem] text-text-mid">
                               <i className="fas fa-check-circle mt-1 text-gold"></i>
                               <span>{point}</span>
@@ -1660,7 +1893,7 @@ const DashboardPage = () => {
                           ))}
                         </div>
                         <div className="mt-4 rounded-[12px] bg-gold-pale p-4 text-[0.85rem] text-brown-dark">
-                          <strong>Main issue:</strong> {analysis.main_issue || "No primary complaint detected"}
+                          <strong>Main issue:</strong> {reviewAnalysis.main_issue || "No primary complaint detected"}
                         </div>
                       </div>
 
@@ -1669,17 +1902,18 @@ const DashboardPage = () => {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <div>
                             <div className="mb-1 text-[0.76rem] font-bold uppercase tracking-[0.12em] text-gold">Main Problem</div>
-                            <p className="text-[0.86rem] leading-6 text-text-mid">{analysis.business_insight.main_problem}</p>
+                            <p className="text-[0.86rem] leading-6 text-text-mid">{reviewAnalysis.business_insight?.main_problem || "No main problem identified."}</p>
                           </div>
                           <div>
                             <div className="mb-1 text-[0.76rem] font-bold uppercase tracking-[0.12em] text-gold">Recommendation</div>
-                            <p className="text-[0.86rem] leading-6 text-text-mid">{analysis.business_insight.recommendation}</p>
+                            <p className="text-[0.86rem] leading-6 text-text-mid">{reviewAnalysis.business_insight?.recommendation || "No recommendation returned."}</p>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                ) : null}
+                {isReviewAnalysisBusy && <LoadingOverlay label="Analyzing reviews..." />}
               </div>
             </AdminCard>
           )}

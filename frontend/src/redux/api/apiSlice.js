@@ -13,7 +13,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Profile', 'Users', 'Roles', 'Orders', 'Reservations', 'Tables', 'Dishes', 'Categories', 'Tags', 'Cart', 'Favorites'],
+  tagTypes: ['Profile', 'Users', 'Roles', 'Orders', 'Reservations', 'Tables', 'Dishes', 'Categories', 'Tags', 'Cart', 'Favorites', 'Reviews'],
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => '/profile',
@@ -286,6 +286,91 @@ export const apiSlice = createApi({
       providesTags: ['Favorites'],
       transformResponse: (response) => response.data,
     }),
+    getReviews: builder.query({
+      query: ({ date, perPage = 50 } = {}) => {
+        const params = new URLSearchParams({ per_page: perPage });
+        if (date) params.set('date', date);
+        return `/reviews?${params.toString()}`;
+      },
+      providesTags: ['Reviews'],
+      transformResponse: (response) => response.data,
+    }),
+    analyzeReviews: builder.query({
+      async queryFn(arg = {}, api, extraOptions, baseQuery) {
+        const params = new URLSearchParams({ per_page: arg.perPage || 200 });
+        if (arg.date) params.set('date', arg.date);
+        const reviewsResult = await baseQuery(`/reviews?${params.toString()}`, api, extraOptions);
+
+        if (reviewsResult.error) {
+          return { error: reviewsResult.error };
+        }
+
+        const reviewsPage = reviewsResult.data?.data;
+        const reviews = reviewsPage?.data || [];
+
+        if (!reviews.length) {
+          return {
+            data: {
+              analysis: null,
+              reviews: [],
+              reviewCount: 0,
+              analyzedAt: new Date().toISOString(),
+            },
+          };
+        }
+
+        const reviewAnalysisUrl = `${import.meta.env.VITE_REVIEW_ANALYSIS_URL || 'http://localhost:5000/review'}/analyze`;
+        let analysisResponse;
+
+        try {
+          analysisResponse = await fetch(reviewAnalysisUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              reviews: reviews.map((review) => ({
+                id: review.id,
+                rating: review.rating,
+                comment: review.comment || '',
+                dish: review.dish?.name || null,
+                customer: review.user?.name || null,
+                created_at: review.created_at,
+              })),
+            }),
+          });
+        } catch (error) {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              data: { message: error.message || 'Review analysis service is unavailable.' },
+            },
+          };
+        }
+
+        const analysisData = await analysisResponse.json().catch(() => null);
+
+        if (!analysisResponse.ok) {
+          return {
+            error: {
+              status: analysisResponse.status,
+              data: analysisData || { message: 'Failed to analyze reviews.' },
+            },
+          };
+        }
+
+        return {
+          data: {
+            analysis: analysisData,
+            reviews,
+            reviewCount: reviewsPage?.total || reviews.length,
+            analyzedAt: new Date().toISOString(),
+          },
+        };
+      },
+      providesTags: ['Reviews'],
+    }),
     addFavorite: builder.mutation({
       query: (dishId) => ({
         url: '/favorites',
@@ -342,6 +427,8 @@ export const {
   useRemoveFromCartMutation,
   useClearCartMutation,
   useGetFavoritesQuery,
+  useGetReviewsQuery,
+  useAnalyzeReviewsQuery,
   useAddFavoriteMutation,
   useRemoveFavoriteMutation,
 } = apiSlice;
