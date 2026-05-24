@@ -1,9 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DishCard from '../Components/DishCard';
+import { useGetDishesQuery, useGetFavoritesQuery } from '../redux/api/apiSlice';
+import { normalizeDish } from '../utils/menuTransforms';
 
 const HomePage = () => {
   const sliderRef = useRef(null);
+  const { data: dishesData = [], isLoading } = useGetDishesQuery();
+
+  const token = localStorage.getItem('auth_token');
+  const isLoggedIn = !!token;
+  const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn });
+
+  const dishes = useMemo(() => {
+    if (!dishesData.length) return [];
+    return dishesData.map(normalizeDish).slice(0, 4);
+  }, [dishesData]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -20,36 +32,7 @@ const HomePage = () => {
     document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, []);
-
-  const dishes = [
-    {
-      name: "Lamb Tagine",
-      description: "Slow-cooked with prunes, almonds & ras el hanout spice blend.",
-      price: 28,
-      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSz5TqfTX0hI5mgT1WgBK8OHYqAjWajsFYNcZgHhBxA8laXlWKZoAy4JFpBA8BTXEs0_W04dIxbiDcspE6TqqE_v9TLnYHHatQD9Hk2Ff8&s=10",
-      badge: "Chef's Pick"
-    },
-    {
-      name: "Royal Couscous",
-      description: "Steamed semolina with seven vegetables & merguez sausage.",
-      price: 24,
-      image: "https://assets.tmecosys.com/image/upload/t_web_rdp_recipe_584x480/img/recipe/ras/Assets/D3FE131E-EB10-46E8-9E93-5E178323751D/Derivates/A0B1EE28-94D2-4922-B871-CFB63832A281.jpg"
-    },
-    {
-      name: "Zaalouk Salad",
-      description: "Smoky eggplant & tomato dip with warm khobz bread.",
-      price: 14,
-      image: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=600&q=85",
-      badge: "Vegan"
-    },
-    {
-      name: "Bastilla au Poulet",
-      description: "Crispy warqa pastry with spiced chicken, egg & almond filling.",
-      price: 22,
-      image: "https://images.unsplash.com/photo-1574484284002-952d92456975?w=600&q=85"
-    }
-  ];
+  }, [isLoading, dishes.length]);
 
   return (
     <main>
@@ -90,11 +73,22 @@ const HomePage = () => {
             modern flair.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 fade-in">
-          {dishes.map((dish, i) => (
-            <DishCard key={i} {...dish} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="py-12 flex flex-col items-center text-center">
+            <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
+            <p className="text-text-mid text-[0.9rem]">Loading dishes...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 fade-in">
+            {dishes.map((dish, i) => (
+              <DishCard 
+                key={dish.id || i} 
+                {...dish} 
+                isFavourite={favoritesData.some(f => f.id === dish.id)} 
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ─── TESTIMONIALS ─── */}

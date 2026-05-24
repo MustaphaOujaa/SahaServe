@@ -1,8 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import DishCard from '../components/DishCard';
+import { useGetFavoritesQuery } from '../redux/api/apiSlice';
+import { normalizeDish } from '../utils/menuTransforms';
 
-const FavouritesPage = ({ isLoggedIn = false, favourites = [] }) => {
+const FavouritesPage = () => {
+  const token = localStorage.getItem('auth_token');
+  const isLoggedIn = !!token;
+  
+  const { data: favoritesData = [], isLoading } = useGetFavoritesQuery(undefined, {
+    skip: !isLoggedIn,
+  });
+
+  const favourites = favoritesData.map(normalizeDish);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream pt-[72px]">
+        <div className="py-20 flex flex-col items-center text-center">
+          <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
+          <p className="text-text-mid text-[0.9rem]">Loading your favourites...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream relative overflow-hidden">
       {/* Decorative Orbs */}

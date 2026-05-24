@@ -57,6 +57,7 @@ export const normalizeDish = (dish) => {
     badges: tags.slice(0, 2),
     badge: tags[0],
     image: resolveAssetUrl(dish.images?.[0]?.url || dish.image),
+    images: dish.images?.map(img => resolveAssetUrl(img.url)) || (dish.image ? [resolveAssetUrl(dish.image)] : [FALLBACK_IMAGE]),
   };
 };
 

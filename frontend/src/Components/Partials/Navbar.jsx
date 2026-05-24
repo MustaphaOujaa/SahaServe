@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ButtonSpinner } from '../UI/Loading';
+import { useGetFavoritesQuery, useGetCartQuery } from '../../redux/api/apiSlice';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -47,6 +48,15 @@ const Navbar = () => {
   const avatarUrl = getAvatarUrl();
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
 
+  const token = localStorage.getItem('auth_token');
+  const isLoggedIn = !!token && user;
+  
+  const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn || isAdmin });
+  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn || isAdmin });
+
+  const favCount = favoritesData?.length || 0;
+  const cartCount = cartData?.items?.length || 0;
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     await logout();
@@ -82,11 +92,11 @@ const Navbar = () => {
                 </Link>
                 <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
                   <i className="fas fa-heart"></i>
-                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">0</span>
+                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{favCount}</span>
                 </Link>
                 <Link to="/cart" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
                   <i className="fas fa-shopping-bag"></i>
-                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">0</span>
+                  <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{cartCount}</span>
                 </Link>
               </div>
             )}
@@ -154,11 +164,11 @@ const Navbar = () => {
               </Link>
               <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
                 <i className="fas fa-heart"></i>
-                <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">0</span>
+                <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{favCount}</span>
               </Link>
               <Link to="/cart" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
                 <i className="fas fa-shopping-bag"></i>
-                <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">0</span>
+                <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-brown-dark text-white text-[0.62rem] font-bold flex items-center justify-center">{cartCount}</span>
               </Link>
             </div>
           )}
