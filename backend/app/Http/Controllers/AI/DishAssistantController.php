@@ -24,7 +24,7 @@ class DishAssistantController extends Controller
      */
     public function filter(Request $request)
     {
-        $query = Dish::query()->with(['category', 'tags']);
+        $query = Dish::query()->with(['category', 'tags', 'images']);
 
         // 1. Keyword search (Name or Description)
         if ($request->has('query') && !empty($request->input('query'))) {

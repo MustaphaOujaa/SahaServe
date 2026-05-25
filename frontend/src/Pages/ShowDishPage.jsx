@@ -7,7 +7,11 @@ import {
   useAddToCartMutation, 
   useAddFavoriteMutation, 
   useRemoveFavoriteMutation, 
-  useGetFavoritesQuery 
+  useGetFavoritesQuery,
+  useGetDishReviewsQuery,
+  useCreateReviewMutation,
+  useDeleteReviewMutation,
+  useGetProfileQuery
 } from '../redux/api/apiSlice';
 import { normalizeDish } from '../utils/menuTransforms';
 import { toast } from 'react-hot-toast';
@@ -18,6 +22,8 @@ const ShowDishPage = () => {
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState('description'); // description | reviews
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
   const { data: backendDish, isLoading, isError } = useGetDishQuery(id);
   const { data: dishes = [] } = useGetDishesQuery();
   const dish = useMemo(() => backendDish ? normalizeDish(backendDish) : null, [backendDish]);
@@ -26,11 +32,29 @@ const ShowDishPage = () => {
   const token = localStorage.getItem('auth_token');
   const isLoggedIn = !!token;
   const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn });
+  const { data: profile } = useGetProfileQuery(undefined, { skip: !isLoggedIn });
+  const {
+    data: reviewsResponse,
+    isLoading: isReviewsLoading,
+    isFetching: isReviewsFetching,
+  } = useGetDishReviewsQuery({ dishId: id, perPage: 50 }, { skip: !id });
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
   const [addFavorite, { isLoading: isAddingFav }] = useAddFavoriteMutation();
   const [removeFavorite, { isLoading: isRemovingFav }] = useRemoveFavoriteMutation();
+  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
+  const [deleteReview, { isLoading: isDeletingReview }] = useDeleteReviewMutation();
 
   const isFav = dish ? favoritesData.some(f => f.id === dish.id) : false;
+  const liveReviews = reviewsResponse?.reviews || [];
+  const reviewSummary = reviewsResponse?.summary || {};
+  const reviewCount = reviewSummary.count ?? liveReviews.length ?? dish?.reviews ?? 0;
+  const averageRating = Number(reviewSummary.average_rating || dish?.rating || 0);
+  const hasReviewed = isLoggedIn && profile ? liveReviews.some(review => review.user_id === profile.id) : false;
+
+  const formatReviewDate = (value) => {
+    if (!value) return '';
+    return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+  };
 
   const handleToggleFav = async (e) => {
     e.preventDefault();
@@ -57,6 +81,35 @@ const ShowDishPage = () => {
     } catch (err) {
       console.error(err);
       toast.error(err.data?.message || "Failed to add to cart");
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!isLoggedIn) return navigate('/login');
+
+    try {
+      await createReview({
+        dish_id: dish.id,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      }).unwrap();
+      setReviewComment('');
+      setReviewRating(5);
+      toast.success('Review added. Thank you!');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.data?.message || 'Failed to add review');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await deleteReview(reviewId).unwrap();
+      toast.success('Review deleted');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.data?.message || 'Failed to delete review');
     }
   };
 
@@ -175,8 +228,8 @@ const ShowDishPage = () => {
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-1.5 text-gold text-[1.1rem]">
                 <i className="fas fa-star"></i>
-                <span className="font-bold text-brown-dark">{dish.rating}</span>
-                <span className="text-text-mid text-[0.85rem] font-normal">({dish.reviews} Reviews)</span>
+                <span className="font-bold text-brown-dark">{averageRating || '0.0'}</span>
+                <span className="text-text-mid text-[0.85rem] font-normal">({reviewCount} Reviews)</span>
               </div>
             </div>
 
@@ -256,7 +309,7 @@ const ShowDishPage = () => {
               onClick={() => setActiveTab('reviews')}
               className={`pb-4 text-[1.1rem] font-bold transition-colors relative cursor-pointer ${activeTab === 'reviews' ? 'text-gold' : 'text-text-mid hover:text-brown-dark'}`}
             >
-              Reviews ({dish.reviews})
+              Reviews ({reviewCount})
               {activeTab === 'reviews' && <span className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-gold rounded-t-full"></span>}
             </button>
           </div>
@@ -280,45 +333,99 @@ const ShowDishPage = () => {
 
           {activeTab === 'reviews' && (
             <div className="animate-[fadeUp_0.3s_ease_both]">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
                 <div>
                   <h3 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark">Customer Reviews</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex text-gold text-[1.1rem]">
-                      <i className="fas fa-star"></i>
-                      <i className="fas fa-star"></i>
-                      <i className="fas fa-star"></i>
-                      <i className="fas fa-star"></i>
-                      <i className="fas fa-star-half-alt"></i>
+                      {[...Array(5)].map((_, i) => (
+                        <i key={i} className={i < Math.round(averageRating) ? "fas fa-star" : "far fa-star"}></i>
+                      ))}
                     </div>
-                    <span className="font-bold text-brown-dark text-[1.1rem]">{dish.rating} out of 5</span>
+                    <span className="font-bold text-brown-dark text-[1.1rem]">{averageRating || '0.0'} out of 5</span>
                   </div>
                 </div>
-                <button className="px-6 py-2.5 rounded-full border-2 border-gold text-gold font-bold text-[0.9rem] hover:bg-gold hover:text-white transition-all cursor-pointer">
-                  Write a Review
-                </button>
+                <form onSubmit={handleSubmitReview} className="w-full lg:max-w-[520px] bg-cream rounded-[16px] border border-beige p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+                    <label htmlFor="review-rating" className="font-bold text-brown-dark text-[0.9rem]">Your rating</label>
+                    <select
+                      id="review-rating"
+                      value={reviewRating}
+                      onChange={(e) => setReviewRating(Number(e.target.value))}
+                      disabled={!isLoggedIn || hasReviewed || isSubmittingReview}
+                      className="h-10 rounded-full border border-beige bg-white px-4 text-brown-dark font-semibold outline-none focus:border-gold"
+                    >
+                      {[5, 4, 3, 2, 1].map(value => (
+                        <option key={value} value={value}>{value} star{value > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    disabled={!isLoggedIn || hasReviewed || isSubmittingReview}
+                    placeholder={isLoggedIn ? (hasReviewed ? 'You already reviewed this dish.' : 'Write your comment...') : 'Log in to write a review.'}
+                    className="w-full min-h-[96px] rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.95rem] text-brown-dark outline-none resize-y focus:border-gold disabled:bg-white/70"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={!isLoggedIn || hasReviewed || isSubmittingReview}
+                      className="inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-full bg-gold px-5 text-white font-bold text-[0.9rem] hover:bg-brown transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingReview && <i className="fas fa-spinner fa-spin"></i>}
+                      <span>{isSubmittingReview ? 'Sending...' : 'Post Review'}</span>
+                    </button>
+                  </div>
+                </form>
               </div>
 
+              {(isReviewsLoading || isReviewsFetching) && (
+                <div className="py-8 text-center text-text-mid">
+                  <i className="fas fa-spinner fa-spin text-gold mr-2"></i>
+                  Loading reviews...
+                </div>
+              )}
+
+              {!isReviewsLoading && liveReviews.length === 0 && (
+                <div className="bg-cream rounded-[16px] p-6 border border-beige text-text-mid">
+                  No reviews yet. Be the first to share your thoughts.
+                </div>
+              )}
+
               <div className="space-y-6">
-                {mockReviews.map(review => (
+                {liveReviews.map(review => (
                   <div key={review.id} className="bg-cream rounded-[16px] p-6 border border-beige">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold font-bold text-[1.1rem]">
-                          {review.user.charAt(0)}
+                          {(review.user?.name || 'G').charAt(0)}
                         </div>
                         <div>
-                          <h4 className="font-bold text-brown-dark">{review.user}</h4>
-                          <span className="text-[0.75rem] text-text-mid">{review.date}</span>
+                          <h4 className="font-bold text-brown-dark">{review.user?.name || 'Guest'}</h4>
+                          <span className="text-[0.75rem] text-text-mid">{formatReviewDate(review.created_at)}</span>
                         </div>
                       </div>
-                      <div className="flex text-gold text-[0.8rem]">
-                        {[...Array(5)].map((_, i) => (
-                          <i key={i} className={i < review.rating ? "fas fa-star" : "far fa-star"}></i>
-                        ))}
+                      <div className="flex items-center gap-3">
+                        <div className="flex text-gold text-[0.8rem]">
+                          {[...Array(5)].map((_, i) => (
+                            <i key={i} className={i < review.rating ? "fas fa-star" : "far fa-star"}></i>
+                          ))}
+                        </div>
+                        {profile?.id === review.user_id && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReview(review.id)}
+                            disabled={isDeletingReview}
+                            className="text-text-mid hover:text-[#e74c3c] transition-colors cursor-pointer disabled:opacity-60"
+                            aria-label="Delete review"
+                          >
+                            <i className="fas fa-trash-can"></i>
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <p className="text-[0.95rem] text-text-mid">{review.text}</p>
+                    <p className="text-[0.95rem] text-text-mid">{review.comment || 'No comment provided.'}</p>
                   </div>
                 ))}
               </div>

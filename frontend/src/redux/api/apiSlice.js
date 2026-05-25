@@ -300,13 +300,46 @@ export const apiSlice = createApi({
       transformResponse: (response) => response.data,
     }),
     getReviews: builder.query({
-      query: ({ date, perPage = 50 } = {}) => {
+      query: ({ date, dishId, perPage = 50 } = {}) => {
         const params = new URLSearchParams({ per_page: perPage });
         if (date) params.set('date', date);
+        if (dishId) params.set('dish_id', dishId);
         return `/reviews?${params.toString()}`;
       },
       providesTags: ['Reviews'],
       transformResponse: (response) => response.data,
+    }),
+    getDishReviews: builder.query({
+      query: ({ dishId, perPage = 50 }) => `/dishes/${dishId}/reviews?per_page=${perPage}`,
+      providesTags: (_result, _error, arg) => [
+        'Reviews',
+        { type: 'Reviews', id: `DISH-${arg.dishId}` },
+      ],
+      transformResponse: (response) => ({
+        reviews: response.data?.data || [],
+        pagination: response.data,
+        summary: response.summary || { count: 0, average_rating: 0 },
+      }),
+    }),
+    createReview: builder.mutation({
+      query: (data) => ({
+        url: '/reviews',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        'Reviews',
+        { type: 'Reviews', id: `DISH-${arg.dish_id}` },
+        { type: 'Dishes', id: arg.dish_id },
+        'Dishes',
+      ],
+    }),
+    deleteReview: builder.mutation({
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Reviews', 'Dishes'],
     }),
     analyzeReviews: builder.query({
       async queryFn(arg = {}, api, extraOptions, baseQuery) {
@@ -443,6 +476,9 @@ export const {
   useGetMyOrdersQuery,
   useGetFavoritesQuery,
   useGetReviewsQuery,
+  useGetDishReviewsQuery,
+  useCreateReviewMutation,
+  useDeleteReviewMutation,
   useAnalyzeReviewsQuery,
   useAddFavoriteMutation,
   useRemoveFavoriteMutation,
