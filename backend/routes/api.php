@@ -40,6 +40,7 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 //dishes
 Route::get('/dishes', [DishController::class, 'index']);
 Route::get('/dishes/{id}', [DishController::class, 'show']);
+Route::get('/dishes/{id}/reviews', [ReviewController::class, 'dishReviews']);
 
 
 #PROTECTED ROUTES --> USER ONLY ----------------------------------

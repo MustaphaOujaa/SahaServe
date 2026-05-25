@@ -1,19 +1,87 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { resolveAssetUrl } from '../utils/menuTransforms';
 
 const ASSISTANT_API_URL = import.meta.env.VITE_DISH_ASSISTANT_URL || 'http://127.0.0.1:5005/assistant/chat';
+
+/* ─── Loading context labels for different actions ─── */
+const LOADING_LABELS = {
+  default: 'Thinking',
+  recommend: 'Searching our menu',
+  cart_add: 'Adding to your cart',
+  cart_remove: 'Updating your cart',
+  cart_view: 'Checking your cart',
+};
+
+/* ─── Action icon map ─── */
+const ACTION_ICONS = {
+  cart_add: 'fa-check-circle',
+  cart_remove: 'fa-trash-alt',
+  cart_view: 'fa-shopping-cart',
+  recommend: 'fa-utensils',
+  greeting: 'fa-hand-sparkles',
+  general: 'fa-comment-dots',
+};
+
+/* ─── Image component with skeleton loading ─── */
+const DishImage = ({ src, alt }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const resolvedSrc = resolveAssetUrl(src);
+  const fallbackSrc = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=75';
+
+  return (
+    <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden shrink-0 border border-gold/20">
+      {/* Skeleton shimmer while loading */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 bg-gradient-to-r from-brown/60 via-gold/10 to-brown/60 animate-[shimmer_1.5s_ease-in-out_infinite] bg-[length:200%_100%]" />
+      )}
+      <img
+        src={error ? fallbackSrc : resolvedSrc}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => { setError(true); setLoaded(true); }}
+        loading="lazy"
+      />
+    </div>
+  );
+};
+
+/* ─── Cart action confirmation banner ─── */
+const ActionBanner = ({ action, text }) => {
+  if (!action || action === 'recommend' || action === 'greeting' || action === 'general') return null;
+
+  const config = {
+    cart_add: { icon: 'fa-check-circle', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Added to cart' },
+    cart_remove: { icon: 'fa-trash-alt', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', label: 'Removed from cart' },
+    cart_view: { icon: 'fa-shopping-cart', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Your cart' },
+  };
+
+  const c = config[action];
+  if (!c) return null;
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${c.bg} mb-2 animate-[fadeUp_0.3s_ease_both]`}>
+      <i className={`fas ${c.icon} ${c.color} text-[0.8rem]`}></i>
+      <span className={`text-[0.75rem] font-semibold ${c.color} uppercase tracking-wider`}>{c.label}</span>
+    </div>
+  );
+};
 
 const Soa = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState(LOADING_LABELS.default);
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       sender: 'bot',
-      text: "Salam! ✦ I am Soa, your Smart Order Assistant at SahaServe. I can guide you through our authentic Moroccan specialties, suggest the perfect dish for your taste, or find delicious vegetarian and spicy options. What are you in the mood for tonight? 🍽️",
+      text: "Salam! I am your Smart Order Assistance at SahaServe. I can guide you through our Moroccan specialties, suggest the perfect dish for your taste, or find vegetarian and spicy options. What are you in the mood for tonight?",
       dishes: [],
+      action: 'greeting',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -26,10 +94,10 @@ const Soa = () => {
   }, [messages, isLoading]);
 
   const quickReplies = [
-    { label: "Chef's Pick 👑", query: "Recommend a Chef's Pick" },
-    { label: "Spicy Options 🌶️", query: "Do you have anything spicy?" },
-    { label: "Vegetarian / Vegan 🥬", query: "Show me vegetarian options" },
-    { label: "Lamb Tagine 🥩", query: "Tell me about the Lamb Tagine" }
+    { label: "🔥 Chef's Pick", query: "Recommend a Chef's Pick" },
+    { label: "🌶️ Spicy", query: "Do you have anything spicy?" },
+    { label: "🥗 Vegetarian", query: "Show me vegetarian options" },
+    { label: "🍖 Lamb Tagine", query: "Tell me about the Lamb Tagine" }
   ];
 
   const handleAddDishToCart = (dish) => {
@@ -39,6 +107,18 @@ const Soa = () => {
   const handleSend = async (textToSend) => {
     const text = textToSend || inputText;
     if (!text.trim()) return;
+
+    // Guess loading label from user text
+    const lowerText = text.toLowerCase();
+    if (/add.*cart/i.test(lowerText)) {
+      setLoadingLabel(LOADING_LABELS.cart_add);
+    } else if (/remove.*cart|delete.*cart/i.test(lowerText)) {
+      setLoadingLabel(LOADING_LABELS.cart_remove);
+    } else if (/view.*cart|show.*cart|my cart/i.test(lowerText)) {
+      setLoadingLabel(LOADING_LABELS.cart_view);
+    } else {
+      setLoadingLabel(LOADING_LABELS.recommend);
+    }
 
     // Add user message
     const userMessage = {
@@ -60,16 +140,20 @@ const Soa = () => {
       
       let responseText = "Sorry, I encountered an error.";
       let recommendedDishes = [];
+      let responseAction = 'general';
       
       if (response.data && response.data.response) {
         if (typeof response.data.response === 'string') {
           responseText = response.data.response;
         } else {
-          if (response.data.response.summary) {
-            responseText = response.data.response.summary;
-          }
           if (response.data.response.recommended_dishes) {
             recommendedDishes = response.data.response.recommended_dishes;
+          }
+          if (response.data.response.action) {
+            responseAction = response.data.response.action;
+          }
+          if (response.data.response.summary) {
+            responseText = response.data.response.summary;
           }
         }
       }
@@ -79,6 +163,7 @@ const Soa = () => {
         sender: 'bot',
         text: responseText,
         dishes: recommendedDishes,
+        action: responseAction,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMessage]);
@@ -89,11 +174,13 @@ const Soa = () => {
         sender: 'bot',
         text: "I'm having trouble connecting to my brain right now. Please check your connection or try again later.",
         dishes: [],
+        action: 'general',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setLoadingLabel(LOADING_LABELS.default);
     }
   };
 
@@ -108,8 +195,9 @@ const Soa = () => {
       {
         id: 'welcome',
         sender: 'bot',
-        text: "Chat cleared! ✦ Ask me anything about our delicious menu items, recommendations, or diets.",
+        text: "Chat cleared. Ask me anything about our menu items, recommendations, or diets.",
         dishes: [],
+        action: 'greeting',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -177,11 +265,11 @@ const Soa = () => {
             
             <div>
               <h3 className="font-semibold text-white text-[0.95rem] leading-none tracking-wide flex items-center gap-1.5">
-                Soa Assistant <span className="text-[0.7rem] px-1.5 py-0.5 rounded bg-gold/10 text-gold-light border border-gold/20 font-mono tracking-widest uppercase">AI</span>
+                Smart Order Assistance <span className="text-[0.7rem] px-1.5 py-0.5 rounded bg-gold/10 text-gold-light border border-gold/20 font-mono tracking-widest uppercase">AI</span>
               </h3>
               <p className="text-[0.73rem] text-gold-pale/60 mt-1 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
-                Ask me about dishes!
+                Your personal dining assistant
               </p>
             </div>
           </div>
@@ -208,10 +296,11 @@ const Soa = () => {
 
         {/* Messaging Area */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gold/20 scrollbar-track-transparent">
-          {messages.map((message) => (
+          {messages.map((message, msgIdx) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-[msgSlideIn_0.35s_ease_both]`}
+              style={{ animationDelay: `${msgIdx * 0.04}s` }}
             >
               <div
                 className={`max-w-[85%] rounded-[18px] p-3.5 shadow-sm flex flex-col gap-1 ${
@@ -220,6 +309,11 @@ const Soa = () => {
                     : 'bg-brown/40 border border-gold/15 text-cream rounded-bl-none'
                 }`}
               >
+                {/* Cart action banner for bot messages */}
+                {message.sender === 'bot' && message.action && (
+                  <ActionBanner action={message.action} />
+                )}
+
                 {/* Text render with support for bold formatting and lists */}
                 <p className="text-[0.88rem] leading-relaxed whitespace-pre-line font-light">
                   {message.text.split('**').map((part, idx) => 
@@ -231,43 +325,49 @@ const Soa = () => {
                 {message.sender === 'bot' && message.dishes && message.dishes.length > 0 && (
                   <div className="mt-3.5 pt-3 border-t border-gold/10 space-y-2.5 animate-[fadeUp_0.3s_ease_both]">
                     <p className="text-[0.73rem] font-bold text-gold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <i className="fas fa-utensils text-[0.7rem]"></i> Match recommendations:
+                      <i className="fas fa-utensils text-[0.7rem]"></i> Recommendations
                     </p>
                     <div className="grid grid-cols-1 gap-2 max-w-full">
-                      {message.dishes.map((dish) => (
+                      {message.dishes.map((dish, dishIdx) => (
                         <div 
                           key={dish.id} 
-                          className="p-3 rounded-xl bg-black/40 border border-gold/20 flex justify-between items-center gap-4 hover:border-gold/45 hover:bg-black/50 transition-all duration-300"
+                          className="p-3 rounded-xl bg-black/40 border border-gold/20 flex items-start gap-3 hover:border-gold/45 hover:bg-black/50 transition-all duration-300 animate-[fadeUp_0.35s_ease_both]"
+                          style={{ animationDelay: `${dishIdx * 0.08}s` }}
                         >
+                          {/* Dish image with skeleton loading */}
+                          <DishImage src={dish.image} alt={dish.name} />
+
+                          {/* Dish info */}
                           <div className="flex-1 min-w-0">
                             <h4 className="text-[0.84rem] font-bold text-white truncate flex items-center gap-1">
                               {dish.name}
                             </h4>
                             {dish.reason && (
-                              <p className="text-[0.7rem] text-gold-pale/75 italic mt-0.5 line-clamp-1">
+                              <p className="text-[0.7rem] text-gold-pale/75 italic mt-0.5 line-clamp-2">
                                 {dish.reason}
                               </p>
                             )}
-                          </div>
-                          
-                          <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                            <span className="text-[0.84rem] font-bold text-gold-light font-mono">
-                              {typeof dish.price === 'number' ? `${dish.price.toFixed(2)} DH` : dish.price}
-                            </span>
-                            <div className="flex items-center gap-3">
-                              <Link
-                                to={`/dish/${dish.id}`}
-                                className="text-[0.72rem] text-gold hover:text-gold-light hover:underline transition-all cursor-pointer font-bold flex items-center gap-1"
-                              >
-                                <i className="fas fa-info-circle text-[0.68rem]"></i> Details
-                              </Link>
-                              <button
-                                onClick={() => handleAddDishToCart(dish)}
-                                disabled={isLoading}
-                                className="px-2.5 py-1 rounded-full bg-[linear-gradient(135deg,var(--gold)_0%,#a0721e_100%)] hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold text-[0.68rem] tracking-wide active:scale-95 transition-all shadow-[0_2px_6px_rgba(200,146,42,0.15)] flex items-center gap-1 cursor-pointer"
-                              >
-                                <i className="fas fa-plus text-[0.6rem]"></i> Add
-                              </button>
+                            
+                            {/* Price & actions row */}
+                            <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gold/8">
+                              <span className="text-[0.88rem] font-bold text-gold-light font-mono">
+                                {typeof dish.price === 'number' ? `${dish.price.toFixed(2)} DH` : dish.price}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  to={`/dish/${dish.id}`}
+                                  className="text-[0.72rem] text-gold hover:text-gold-light hover:underline transition-all cursor-pointer font-bold flex items-center gap-1"
+                                >
+                                  <i className="fas fa-info-circle text-[0.68rem]"></i> Details
+                                </Link>
+                                <button
+                                  onClick={() => handleAddDishToCart(dish)}
+                                  disabled={isLoading}
+                                  className="px-2.5 py-1 rounded-full bg-[linear-gradient(135deg,var(--gold)_0%,#a0721e_100%)] hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold text-[0.68rem] tracking-wide active:scale-95 transition-all shadow-[0_2px_6px_rgba(200,146,42,0.15)] flex items-center gap-1 cursor-pointer"
+                                >
+                                  <i className="fas fa-cart-plus text-[0.6rem]"></i> Add
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -277,23 +377,31 @@ const Soa = () => {
                 )}
 
                 <span
-                  className={`text-[0.7rem] self-end opacity-50 ${
+                  className={`text-[0.7rem] self-end opacity-50 flex items-center gap-1.5 ${
                     message.sender === 'user' ? 'text-white' : 'text-gold-pale'
                   }`}
                 >
                   {message.time}
+                  {message.sender === 'user' && (
+                    <i className="fas fa-check-double text-[0.6rem] opacity-70"></i>
+                  )}
                 </span>
               </div>
             </div>
           ))}
 
-          {/* Typing Loading Indicator */}
+          {/* Contextual Typing Loading Indicator */}
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-brown/40 border border-gold/15 text-cream rounded-[18px] rounded-bl-none p-3.5 flex items-center gap-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '300ms' }}></span>
+            <div className="flex justify-start animate-[msgSlideIn_0.25s_ease_both]">
+              <div className="bg-brown/40 border border-gold/15 text-cream rounded-[18px] rounded-bl-none p-3.5 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </div>
+                  <span className="text-[0.75rem] text-gold-pale/50 font-light italic">{loadingLabel}…</span>
+                </div>
               </div>
             </div>
           )}
@@ -335,6 +443,22 @@ const Soa = () => {
           </button>
         </div>
       </div>
+
+      {/* ─── Injected keyframe animations ─── */}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes msgSlideIn {
+          0% { opacity: 0; transform: translateY(12px) scale(0.97); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeUp {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </>
   );
 };

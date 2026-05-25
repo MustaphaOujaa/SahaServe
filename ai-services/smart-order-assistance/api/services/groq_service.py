@@ -24,6 +24,7 @@ def format_dishes_for_model(dishes: list) -> list:
             "price": dish.get("price"),
             "category": (dish.get("category") or {}).get("name"),
             "tags": [tag.get("name") for tag in dish.get("tags", []) if isinstance(tag, dict)],
+            "image": ((dish.get("images") or [{}])[0] or {}).get("url"),
         }
         for dish in dishes
         if isinstance(dish, dict) and not dish.get("error")
@@ -35,15 +36,17 @@ def build_dish_response(dishes: list) -> dict:
             "id": dish.get("id"),
             "name": dish.get("name"),
             "price": dish.get("price"),
-            "reason": "Matches your menu request.",
+            "image": dish.get("image"),
+            "reason": "A strong match for what you asked for.",
         }
         for dish in dishes[:5]
     ]
 
     dish_names = ", ".join(dish["name"] for dish in recommended_dishes if dish.get("name"))
     return {
+        "action": "recommend",
         "recommended_dishes": recommended_dishes,
-        "summary": f"I found these menu options for you: {dish_names}." if dish_names else "I could not find matching dishes on the current menu.",
+        "summary": f"I found a lovely match for you: {dish_names}. These are some of the best options for your taste today." if dish_names else "I could not find matching dishes on the current menu. Tell me a flavor, category, or budget and I will look again.",
     }
 
 def response_needs_menu_fallback(response: dict) -> bool:
@@ -231,20 +234,35 @@ You also have access to `view_cart`, `add_to_cart`, and `remove_from_cart`.
 
 You MUST always return a valid JSON object matching the following structure:
 {
+  "action": "recommend | cart_add | cart_remove | cart_view | greeting | general",
   "recommended_dishes": [
     {
       "id": 1,
       "name": "Dish Name",
       "price": 99.99,
+      "image": "path/to/image.jpg",
       "reason": "Brief reason explaining why this dish matches the query."
     }
   ],
   "summary": "Friendly conversational summary of recommendations, greeting, or confirmation of cart actions."
 }
 
+The "action" field MUST be set based on what you are doing:
+- "recommend" when suggesting dishes from the menu
+- "cart_add" when you have just added an item to the cart
+- "cart_remove" when you have just removed an item from the cart
+- "cart_view" when showing the user their cart contents
+- "greeting" when responding to greetings or general conversation
+- "general" for anything else
+
+The "image" field in recommended_dishes MUST be copied exactly from the tool response data when available. Do not omit it.
+
 Rules:
 - Never recommend dishes that do not exist or were not returned by the tool.
 - Keep reasons short and relevant.
+- Mention the strongest dish by name and talk like a helpful waiter, not a cold search result.
+- When recommending dishes, you may end with a brief, natural suggestion.
+- After performing a cart action (cart_add, cart_remove), do NOT ask "do you want to add to cart?" — instead, confirm the action warmly and naturally. For example: "Done! I have added Lamb Tagine to your cart."
 - Do not include markdown formatting or explanations outside of the JSON object."""
 
     tools = [
@@ -343,6 +361,7 @@ Rules:
             messages.append(response_message)
             menu_dishes = []
             used_cart_tool = False
+            cart_action_type = None
             
             # Handle tool calls
             for tool_call in tool_calls:
@@ -361,9 +380,11 @@ Rules:
                     tool_response = formatted_dishes
                 elif function_name == "view_cart":
                     used_cart_tool = True
+                    cart_action_type = "cart_view"
                     tool_response = call_laravel_view_cart(auth_token)
                 elif function_name == "add_to_cart":
                     used_cart_tool = True
+                    cart_action_type = "cart_add"
                     dish_id = function_args.get("dish_id")
                     quantity = function_args.get("quantity", 1)
                     if dish_id:
@@ -372,6 +393,7 @@ Rules:
                         tool_response = {"error": "dish_id is required."}
                 elif function_name == "remove_from_cart":
                     used_cart_tool = True
+                    cart_action_type = "cart_remove"
                     cart_item_id = function_args.get("cart_item_id")
                     if cart_item_id:
                         tool_response = call_laravel_remove_from_cart(cart_item_id, auth_token)
@@ -396,6 +418,12 @@ Rules:
                 )
                 final_response = json.loads(second_chat_completion.choices[0].message.content)
 
+                # Ensure action field is present based on what tools were used
+                if "action" not in final_response and cart_action_type:
+                    final_response["action"] = cart_action_type
+                elif "action" not in final_response:
+                    final_response["action"] = "recommend"
+
                 if menu_dishes and not used_cart_tool and response_needs_menu_fallback(final_response):
                     return build_dish_response(menu_dishes)
 
@@ -408,6 +436,9 @@ Rules:
         else:
             # If no tools were called, directly return the model's response
             final_response = json.loads(response_message.content)
+            # Ensure action field is present
+            if "action" not in final_response:
+                final_response["action"] = "general"
             if response_needs_menu_fallback(final_response):
                 fallback_response = get_menu_fallback(user_request)
                 if fallback_response:
@@ -420,6 +451,7 @@ Rules:
             return fallback_response
 
         return {
+            "action": "general",
             "recommended_dishes": [],
             "summary": f"An error occurred while communicating with the Groq API: {e}"
         }

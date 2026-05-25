@@ -12,6 +12,10 @@ class ReviewController extends Controller
     {
         $query = Review::with(['user:id,name,email', 'dish:id,name'])->latest();
 
+        if ($request->filled('dish_id')) {
+            $query->where('dish_id', $request->dish_id);
+        }
+
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
@@ -21,6 +25,25 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'data' => $query->paginate($perPage)
+        ]);
+    }
+
+    public function dishReviews(Request $request, $dishId)
+    {
+        $perPage = min((int) $request->input('per_page', 10), 200);
+
+        $reviews = Review::with(['user:id,name,email'])
+            ->where('dish_id', $dishId)
+            ->latest()
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $reviews,
+            'summary' => [
+                'count' => $reviews->total(),
+                'average_rating' => round((float) Review::where('dish_id', $dishId)->avg('rating'), 1),
+            ],
         ]);
     }
 
