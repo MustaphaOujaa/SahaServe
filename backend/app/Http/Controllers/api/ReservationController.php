@@ -67,14 +67,8 @@ class ReservationController extends Controller
 
         $overlap = Reservation::where('table_id', $request->table_id)
             ->where('reservation_date', $request->reservation_date)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('start_time', '<=', $request->start_time)
-                            ->where('end_time', '>=', $request->end_time);
-                    });
-            })
+            ->where('start_time', '<', $request->end_time)
+            ->where('end_time', '>', $request->start_time)
             ->where('status', '!=', 'cancelled')
             ->exists();
 

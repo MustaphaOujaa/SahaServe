@@ -80,6 +80,9 @@ const Navbar = () => {
           <ul className="hidden md:flex gap-8 list-none">
             <li><Link to="/" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Home</Link></li>
             <li><Link to="/menu" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Menu</Link></li>
+            {user && !isAdmin && (
+              <li><Link to="/reservation" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Reservation</Link></li>
+            )}
             <li><Link to="/about" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">About</Link></li>
             <li><Link to="/contact" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Contact</Link></li>
           </ul>
@@ -185,6 +188,17 @@ const Navbar = () => {
                 Menu
               </Link>
             </li>
+            {user && !isAdmin && (
+              <li>
+                <Link 
+                  to="/reservation" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-[0.95rem] font-semibold text-brown-dark no-underline hover:text-gold border-b border-gold/5 transition-all"
+                >
+                  Reservation
+                </Link>
+              </li>
+            )}
             <li>
               <Link 
                 to="/about" 

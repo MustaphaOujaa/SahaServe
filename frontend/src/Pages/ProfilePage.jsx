@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useGetProfileQuery, useUpdateProfileMutation, useDeleteAccountMutation } from '../redux/api/apiSlice';
+import { useGetProfileQuery, useUpdateProfileMutation, useDeleteAccountMutation, useGetUserReservationsQuery } from '../redux/api/apiSlice';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../Components/UI/Loading';
@@ -11,6 +11,7 @@ const ProfilePage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
   const { data: user, isLoading, isError } = useGetProfileQuery();
+  const { data: userReservations = [], isLoading: loadingReservations } = useGetUserReservationsQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation();
   const { logout } = useAuth();
@@ -189,6 +190,68 @@ const ProfilePage = () => {
             </div>
           </div>
         );
+      case 'reservations':
+        return (
+          <div className="bg-white rounded-[24px] shadow-custom p-8 animate-[fadeUp_0.4s_ease_both]">
+            <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-8 pb-4 border-b border-beige flex items-center gap-3">
+              <i className="fas fa-calendar-check text-gold"></i> My Reservations
+            </h2>
+            {loadingReservations ? (
+              <p className="text-text-mid text-center py-4">Loading reservations...</p>
+            ) : userReservations.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-cream rounded-full flex items-center justify-center mx-auto mb-4 text-gold/50">
+                  <i className="fas fa-calendar-times text-2xl"></i>
+                </div>
+                <p className="text-text-mid mb-4">You have no reservations yet.</p>
+                <Link to="/reservation" className="inline-block px-6 py-2 rounded-full border border-gold text-gold font-semibold hover:bg-gold hover:text-white transition-all">
+                  Book a Table
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] border-collapse">
+                  <thead>
+                    <tr className="bg-cream text-left">
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">Date & Time</th>
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">Table</th>
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">Guests</th>
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">Status</th>
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userReservations.map((res, i) => (
+                      <tr key={res.id || i} className="border-b border-beige last:border-none">
+                        <td className="p-4">
+                          <span className="block font-semibold text-brown-dark">{res.reservation_date}</span>
+                          <span className="text-[0.8rem] text-text-mid">{res.start_time} - {res.end_time}</span>
+                        </td>
+                        <td className="p-4 text-[0.95rem] text-brown-dark">{res.table?.name || res.table?.table_number || `Table ${res.table_id}`}</td>
+                        <td className="p-4 text-[0.95rem] text-brown-dark font-bold">{res.guests_number} <i className="fas fa-user text-gold/60 ml-1"></i></td>
+                        <td className="p-4">
+                          <span className={`px-3 py-1 rounded-full text-[0.75rem] font-bold uppercase ${
+                            res.status === 'confirmed' ? 'bg-[#e6f7ed] text-[#27ae60]' : 
+                            res.status === 'cancelled' ? 'bg-[#fdf2f2] text-[#e74c3c]' : 
+                            res.status === 'completed' ? 'bg-[#f0f4f8] text-[#34495e]' : 
+                            'bg-[#fff8e6] text-[#f39c12]' // pending
+                          }`}>
+                            {res.status}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <button className="px-4 py-1.5 rounded-full border border-gold text-gold text-[0.8rem] font-semibold hover:bg-gold hover:text-white transition-all disabled:opacity-50">
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
       case 'track-order':
         return (
           <div className="bg-white rounded-[24px] shadow-custom p-8 animate-[fadeUp_0.4s_ease_both]">
@@ -335,6 +398,7 @@ const ProfilePage = () => {
             {[
               { id: 'personal-info', icon: 'fa-user', label: 'Personal Info' },
               { id: 'order-history', icon: 'fa-history', label: 'Order History' },
+              { id: 'reservations', icon: 'fa-calendar-check', label: 'My Reservations' },
               { id: 'track-order', icon: 'fa-map-location-dot', label: 'Track Your Order' },
               { id: 'settings', icon: 'fa-cog', label: 'Settings' }
             ].map(item => (

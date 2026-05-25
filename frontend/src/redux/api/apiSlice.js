@@ -95,6 +95,19 @@ export const apiSlice = createApi({
       providesTags: ['Reservations'],
       transformResponse: (response) => response.data,
     }),
+    getUserReservations: builder.query({
+      query: () => '/user-reservations',
+      providesTags: ['Reservations'],
+      transformResponse: (response) => response.data,
+    }),
+    createReservation: builder.mutation({
+      query: (data) => ({
+        url: '/reservations',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Reservations'],
+    }),
     updateReservation: builder.mutation({
       query: ({ reservationId, data }) => ({
         url: `/reservations/${reservationId}`,
@@ -448,6 +461,8 @@ export const {
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
   useGetReservationsQuery,
+  useGetUserReservationsQuery,
+  useCreateReservationMutation,
   useUpdateReservationMutation,
   useDeleteReservationMutation,
   useGetTablesQuery,
