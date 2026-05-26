@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { getEcho } from '../../utils/reverb';
 
 export const apiSlice = createApi({
   reducerPath: 'api',
@@ -76,6 +77,42 @@ export const apiSlice = createApi({
       query: () => '/orders',
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
+      async onCacheEntryAdded(_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
+        let channel;
+
+        try {
+          await cacheDataLoaded;
+          const echo = getEcho();
+          channel = echo.channel('orders');
+
+          channel.listen('.order.placed', (event) => {
+            const incomingOrder = event.order;
+
+            if (!incomingOrder) {
+              return;
+            }
+
+            updateCachedData((draft) => {
+              const existingIndex = draft.findIndex((order) => order.id === incomingOrder.id);
+
+              if (existingIndex === -1) {
+                draft.unshift(incomingOrder);
+                return;
+              }
+
+              draft[existingIndex] = incomingOrder;
+            });
+          });
+        } catch {
+          // RTK Query may remove the cache before the first request resolves.
+        }
+
+        await cacheEntryRemoved;
+
+        if (channel) {
+          getEcho().leaveChannel('orders');
+        }
+      },
     }),
     getOrder: builder.query({
       query: (orderId) => `/orders/${orderId}`,

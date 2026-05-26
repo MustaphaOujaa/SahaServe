@@ -9,6 +9,7 @@ cd ..
 :: Backend
 cd backend
 start cmd /k php artisan serve
+start cmd /k php artisan reverb:start --host=0.0.0.0 --port=8080
 cd ..
 
 :: Ai services
