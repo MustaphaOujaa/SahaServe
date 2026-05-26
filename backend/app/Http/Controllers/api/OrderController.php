@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Events\OrderPlaced;
+use App\Events\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
@@ -124,6 +125,9 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $validated['status']]);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -134,6 +138,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'confirmed']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -144,6 +151,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'preparing']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -154,6 +164,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'delivered']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 }

@@ -1,6 +1,62 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getEcho } from '../../utils/reverb';
 
+const upsertOrder = (draft, incomingOrder, allowInsert = true) => {
+  const existingIndex = draft.findIndex((order) => order.id === incomingOrder.id);
+
+  if (existingIndex === -1) {
+    if (!allowInsert) {
+      return;
+    }
+
+    draft.unshift(incomingOrder);
+    return;
+  }
+
+  draft[existingIndex] = incomingOrder;
+};
+
+const listenForOrderUpdates = async ({
+  cacheDataLoaded,
+  cacheEntryRemoved,
+  updateCachedData,
+  shouldAcceptOrder = () => true,
+  allowInsert = true,
+}) => {
+  let channel;
+  let handleOrder;
+
+  try {
+    await cacheDataLoaded;
+    const echo = getEcho();
+    channel = echo.channel('orders');
+
+    handleOrder = (event) => {
+      const incomingOrder = event.order;
+
+      if (!incomingOrder || !shouldAcceptOrder(incomingOrder)) {
+        return;
+      }
+
+      updateCachedData((draft) => {
+        upsertOrder(draft, incomingOrder, allowInsert);
+      });
+    };
+
+    channel.listen('.order.placed', handleOrder);
+    channel.listen('.order.status.updated', handleOrder);
+  } catch {
+    // RTK Query may remove the cache before the first request resolves.
+  }
+
+  await cacheEntryRemoved;
+
+  if (channel) {
+    channel.stopListening('.order.placed', handleOrder);
+    channel.stopListening('.order.status.updated', handleOrder);
+  }
+};
+
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
@@ -77,41 +133,8 @@ export const apiSlice = createApi({
       query: () => '/orders',
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
-      async onCacheEntryAdded(_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
-        let channel;
-
-        try {
-          await cacheDataLoaded;
-          const echo = getEcho();
-          channel = echo.channel('orders');
-
-          channel.listen('.order.placed', (event) => {
-            const incomingOrder = event.order;
-
-            if (!incomingOrder) {
-              return;
-            }
-
-            updateCachedData((draft) => {
-              const existingIndex = draft.findIndex((order) => order.id === incomingOrder.id);
-
-              if (existingIndex === -1) {
-                draft.unshift(incomingOrder);
-                return;
-              }
-
-              draft[existingIndex] = incomingOrder;
-            });
-          });
-        } catch {
-          // RTK Query may remove the cache before the first request resolves.
-        }
-
-        await cacheEntryRemoved;
-
-        if (channel) {
-          getEcho().leaveChannel('orders');
-        }
+      async onCacheEntryAdded(_arg, lifecycleApi) {
+        await listenForOrderUpdates(lifecycleApi);
       },
     }),
     getOrder: builder.query({
@@ -343,6 +366,16 @@ export const apiSlice = createApi({
       query: () => '/my-orders',
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
+      async onCacheEntryAdded(_arg, lifecycleApi) {
+        const storedUser = JSON.parse(localStorage.getItem('auth_user') || 'null');
+        const userId = Number(storedUser?.id);
+
+        await listenForOrderUpdates({
+          ...lifecycleApi,
+          shouldAcceptOrder: (order) => !userId || Number(order.user_id) === userId,
+          allowInsert: Boolean(userId),
+        });
+      },
     }),
     getFavorites: builder.query({
       query: () => '/favorites',

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useGetProfileQuery, useUpdateProfileMutation, useDeleteAccountMutation, useGetUserReservationsQuery } from '../redux/api/apiSlice';
+import { useGetProfileQuery, useUpdateProfileMutation, useDeleteAccountMutation, useGetUserReservationsQuery, useGetMyOrdersQuery } from '../redux/api/apiSlice';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../Components/UI/Loading';
@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const fileInputRef = useRef(null);
   const { data: user, isLoading, isError } = useGetProfileQuery();
   const { data: userReservations = [], isLoading: loadingReservations } = useGetUserReservationsQuery();
+  const { data: orders = [], isLoading: loadingOrders } = useGetMyOrdersQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation();
   const { logout } = useAuth();
@@ -111,12 +112,12 @@ const ProfilePage = () => {
     return <div className="min-h-screen bg-cream pt-32 pb-20 px-[5%] flex justify-center items-center text-red-500 font-bold">Failed to load profile data.</div>;
   }
 
-  const orders = [
-    { id: '#SH-8842', date: 'May 12, 2026', total: '$45.50', status: 'delivered' },
-    { id: '#SH-8721', date: 'May 05, 2026', total: '$28.00', status: 'delivered' },
-    { id: '#SH-8655', date: 'Apr 28, 2026', total: '$62.20', status: 'cancelled' },
-    { id: '#SH-8501', date: 'Apr 15, 2026', total: '$33.15', status: 'delivered' },
-  ];
+  const formatMoney = (value) => `$${Number(value || 0).toFixed(2)}`;
+
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    return new Date(value).toLocaleDateString();
+  };
 
   const renderSection = () => {
     switch(activeSection) {
@@ -155,6 +156,19 @@ const ProfilePage = () => {
             <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-8 pb-4 border-b border-beige flex items-center gap-3">
               <i className="fas fa-history text-gold"></i> Order History
             </h2>
+            {loadingOrders ? (
+              <p className="text-text-mid text-center py-4">Loading orders...</p>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-cream rounded-full flex items-center justify-center mx-auto mb-4 text-gold/50">
+                  <i className="fas fa-receipt text-2xl"></i>
+                </div>
+                <p className="text-text-mid mb-4">You have no orders yet.</p>
+                <Link to="/menu" className="inline-block px-6 py-2 rounded-full border border-gold text-gold font-semibold hover:bg-gold hover:text-white transition-all">
+                  Browse Menu
+                </Link>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] border-collapse">
                 <thead>
@@ -167,11 +181,11 @@ const ProfilePage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, i) => (
-                    <tr key={i} className="border-b border-beige last:border-none">
-                      <td className="p-4 font-semibold text-gold">{order.id}</td>
-                      <td className="p-4 text-[0.95rem] text-brown-dark">{order.date}</td>
-                      <td className="p-4 text-[0.95rem] text-brown-dark font-bold">{order.total}</td>
+                  {orders.map((order) => (
+                    <tr key={order.id} className="border-b border-beige last:border-none">
+                      <td className="p-4 font-semibold text-gold">#{order.id}</td>
+                      <td className="p-4 text-[0.95rem] text-brown-dark">{formatDate(order.created_at)}</td>
+                      <td className="p-4 text-[0.95rem] text-brown-dark font-bold">{formatMoney(order.total_price)}</td>
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-[0.75rem] font-bold uppercase ${
                           order.status === 'delivered' ? 'bg-[#e6f7ed] text-[#27ae60]' : 
@@ -181,13 +195,16 @@ const ProfilePage = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        <button className="px-4 py-1.5 rounded-full border border-gold text-gold text-[0.8rem] font-semibold hover:bg-gold hover:text-white transition-all">Details</button>
+                        <span className="text-[0.8rem] text-text-mid">
+                          {order.items?.map((item) => `${item.dish?.name || 'Dish'} x${item.quantity}`).join(', ') || 'No items'}
+                        </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         );
       case 'reservations':
