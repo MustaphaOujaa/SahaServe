@@ -154,7 +154,7 @@ const downloadTextPdf = ({ title, subtitle, sections: pdfSections, fileName }) =
   URL.revokeObjectURL(url);
 };
 
-const orderStatuses = ["pending", "confirmed", "preparing", "delivered", "cancelled"];
+const orderStatuses = ["pending", "confirmed", "preparing", "prepared", "delivered", "cancelled"];
 const reservationStatuses = ["pending", "confirmed", "cancelled", "completed", "no_show"];
 
 const getPermissionTone = (permission) => {
@@ -181,6 +181,7 @@ const statusStyles = {
   pending: "bg-[#fff7e5] text-[#9a6813] border-[#f0d9a5]",
   preparing: "bg-[#f5e6c8] text-[#6b4b25] border-[#e4c88d]",
   confirmed: "bg-[#edf8ef] text-[#287a3e] border-[#bee2c8]",
+  prepared: "bg-[#edf8ef] text-[#287a3e] border-[#bee2c8]",
   available: "bg-[#edf8ef] text-[#287a3e] border-[#bee2c8]",
   hidden: "bg-[#f7ece9] text-[#9b3f2f] border-[#e8c5bd]",
   positive: "bg-[#edf8ef] text-[#287a3e] border-[#bee2c8]",

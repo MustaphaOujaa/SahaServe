@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\OrderPlaced;
+use App\Events\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
@@ -102,7 +104,10 @@ class OrderController extends Controller
             $cart->items()->delete();
             DB::commit();
 
-            return response()->json(['success' => true, 'data' => $order->load('items.dish', 'table')], 201);
+            $order->load('user', 'items.dish', 'table');
+            broadcast(new OrderPlaced($order))->toOthers();
+
+            return response()->json(['success' => true, 'data' => $order], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Could not create order: ' . $e->getMessage()], 500);
@@ -120,6 +125,9 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $validated['status']]);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -130,6 +138,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'confirmed']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -140,6 +151,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'preparing']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -150,6 +164,9 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $order->update(['status' => 'delivered']);
+        $order->load('user', 'items.dish', 'table');
+        broadcast(new OrderStatusUpdated($order))->toOthers();
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 }
