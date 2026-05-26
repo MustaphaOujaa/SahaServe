@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import ShowDishPage from "./Pages/ShowDishPage";
 import ReservationPage from "./Pages/ReservationPage";
+import ChefDashboard from "./Pages/ChefDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import { PageLoader } from "./Components/UI/Loading";
@@ -50,10 +51,28 @@ const RequireAdmin = ({ children }) => {
   return children;
 };
 
-const AuthenticatedOnly = ({ children }) => {
-  const { user, loading } = useAuth();
+const RequireChef = ({ children }) => {
+  const { user, loading, isChef } = useAuth();
 
-  if (loading || !user) {
+  if (loading) {
+    return <PageLoader label="Loading dashboard..." />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isChef()) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+const ClientOnly = ({ children }) => {
+  const { user, loading, isAdmin, isChef } = useAuth();
+
+  if (loading || !user || isAdmin() || isChef()) {
     return null;
   }
 
@@ -98,13 +117,14 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/profile" element={<AdminRedirect><ProfilePage /></AdminRedirect>} />
+              <Route path="/chef-dashboard" element={<RequireChef><ChefDashboard /></RequireChef>} />
               <Route path="/admin-dashboard" element={<RequireAdmin><DashboardPage /></RequireAdmin>} />
             </Routes>
           </div>
           <Footer />
-          <AuthenticatedOnly>
+          <ClientOnly>
             <Soa />
-          </AuthenticatedOnly>
+          </ClientOnly>
         </div>
       </Router>
     </AuthProvider>

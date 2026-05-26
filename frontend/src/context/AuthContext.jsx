@@ -96,6 +96,8 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = () => hasRole('admin');
 
+  const isChef = () => hasRole('chef');
+
   // Login with token (useful for OAuth callbacks like Google)
   const loginWithToken = async (authToken) => {
     try {
@@ -272,6 +274,7 @@ export const AuthProvider = ({ children }) => {
         resetPassword,
         hasRole,
         isAdmin,
+        isChef,
       }}
     >
       {children}

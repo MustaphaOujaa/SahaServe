@@ -47,12 +47,14 @@ const Navbar = () => {
 
   const avatarUrl = getAvatarUrl();
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
+  const isChef = user?.roles?.some((role) => role.name === 'chef') || false;
+  const isClient = !isAdmin && !isChef;
 
   const token = localStorage.getItem('auth_token');
   const isLoggedIn = !!token && user;
   
-  const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn || isAdmin });
-  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn || isAdmin });
+  const { data: favoritesData = [] } = useGetFavoritesQuery(undefined, { skip: !isLoggedIn || !isClient });
+  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn || !isClient });
 
   const favCount = favoritesData?.length || 0;
   const cartCount = cartData?.items?.length || 0;
@@ -80,14 +82,14 @@ const Navbar = () => {
           <ul className="hidden md:flex gap-8 list-none">
             <li><Link to="/" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Home</Link></li>
             <li><Link to="/menu" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Menu</Link></li>
-            {user && !isAdmin && (
+            {user && isClient && (
               <li><Link to="/reservation" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Reservation</Link></li>
             )}
             <li><Link to="/about" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">About</Link></li>
             <li><Link to="/contact" className="text-[0.84rem] font-medium tracking-[0.05em] uppercase text-text-mid no-underline hover:text-gold transition-colors">Contact</Link></li>
           </ul>
           <div className="flex gap-[0.7rem] items-center">
-            {user && !isAdmin && (
+            {user && isClient && (
               <div className="hidden md:flex gap-[0.7rem]">
 
                 <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[0.95rem] hover:bg-gold hover:text-white transition-all">
@@ -117,8 +119,8 @@ const Navbar = () => {
                   <i className="fas fa-chevron-down text-[0.5rem] opacity-70"></i>
                 </button>
                 <div className={`absolute top-[100%] right-0 w-[200px] bg-white rounded-custom-sm shadow-custom-lg border border-[rgba(200,146,42,0.1)] p-3 flex flex-col gap-1 transition-all duration-300 z-[1001] mt-[10px] ${accountMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-[10px]'}`}>
-                  <Link to={isAdmin ? "/admin-dashboard" : "/profile"} className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
-                    <i className={`fas ${isAdmin ? 'fa-chart-line' : 'fa-user-circle'} text-gold w-[18px]`}></i> {isAdmin ? 'Admin Dashboard' : 'Client Profile'}
+                  <Link to={isAdmin ? "/admin-dashboard" : isChef ? "/chef-dashboard" : "/profile"} className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
+                    <i className={`fas ${isAdmin ? 'fa-chart-line' : isChef ? 'fa-utensils' : 'fa-user-circle'} text-gold w-[18px]`}></i> {isAdmin ? 'Admin Dashboard' : isChef ? 'Chef Dashboard' : 'Client Profile'}
                   </Link>
                   <div className="h-[1px] bg-[rgba(200,146,42,0.1)] my-[0.4rem]"></div>
                   <button onClick={handleLogout} disabled={isLoggingOut} className="w-full flex items-center gap-3 p-[0.65rem] rounded-[10px] text-[rgba(231,76,60,0.9)] text-[0.85rem] font-medium hover:bg-[rgba(231,76,60,0.08)] hover:text-[#c0392b] transition-all text-left border-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
@@ -156,7 +158,7 @@ const Navbar = () => {
       {/* Responsive mobile drawer dropdown */}
       {!isAuthPage && mobileMenuOpen && (
         <div className="md:hidden absolute top-[100%] left-0 right-0 bg-[rgba(250,245,236,0.98)] backdrop-blur-[24px] border-b border-gold/20 shadow-custom-lg p-6 flex flex-col gap-4 z-[999] animate-[fadeUp_0.25s_ease_both]">
-          {user && !isAdmin && (
+          {user && isClient && (
             <div className="flex gap-2 mb-4">
 
               <Link to="/favourites" className="relative w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold hover:bg-gold hover:text-white transition-all">
@@ -188,7 +190,7 @@ const Navbar = () => {
                 Menu
               </Link>
             </li>
-            {user && !isAdmin && (
+            {user && isClient && (
               <li>
                 <Link 
                   to="/reservation" 

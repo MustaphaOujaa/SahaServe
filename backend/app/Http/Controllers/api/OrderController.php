@@ -116,7 +116,7 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,confirmed,preparing,delivered,cancelled'
+            'status' => 'required|string|in:pending,confirmed,preparing,prepared,delivered,cancelled'
         ]);
 
         $order->update(['status' => $validated['status']]);

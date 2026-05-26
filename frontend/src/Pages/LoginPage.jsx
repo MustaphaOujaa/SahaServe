@@ -20,7 +20,9 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const getPostLoginPath = (user) => {
-    return user?.roles?.some((role) => role.name === 'admin') ? '/admin-dashboard' : '/';
+    if (user?.roles?.some((role) => role.name === 'admin')) return '/admin-dashboard';
+    if (user?.roles?.some((role) => role.name === 'chef')) return '/chef-dashboard';
+    return '/';
   };
 
   React.useEffect(() => {
