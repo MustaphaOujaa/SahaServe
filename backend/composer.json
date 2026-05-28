@@ -13,7 +13,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
-        "spatie/laravel-permission": "^7.4"
+        "spatie/laravel-permission": "*"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",

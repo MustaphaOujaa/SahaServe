@@ -12,7 +12,7 @@ class Order extends Model
         'order_type',
         'delivery_address',
         'table_id',
-        'payment_method',
+        'delivery_worker_id',
     ];
 
     public function user()
@@ -25,8 +25,8 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function table()
+    public function deliveryWorker()
     {
-        return $this->belongsTo(Table::class);
+        return $this->belongsTo(User::class, 'delivery_worker_id');
     }
 }

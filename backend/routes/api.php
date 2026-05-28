@@ -10,7 +10,7 @@ use App\Http\Controllers\AI\FeedbackController;
 use App\Http\Controllers\AI\DishAssistantController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DishController;
-use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\DeliveryController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ReviewController;
 
@@ -68,10 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart', [CartController::class, 'clear']);
 
     //orders
-    Route::middleware('permission:make-order')->group(function () {
-        Route::get('/my-orders', [OrderController::class, 'userOrders']);
-        Route::post('/orders', [OrderController::class, 'store']);
-    });
+        Route::get('/delivery/current', [DeliveryController::class, 'current']);
+        Route::get('/delivery/history', [DeliveryController::class, 'history']);
 
     //reviews
     Route::post('/reviews', [ReviewController::class, 'store']);

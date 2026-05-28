@@ -11,10 +11,13 @@ import CartPage from "./pages/CartPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import ProfilePage from "./pages/ProfilePage";
-import DashboardPage from "./pages/DashboardPage";
+import ChefDashboard from "./Pages/ChefDashboard";
+import DeliveryDashboard from "./Pages/DeliveryDashboard";
 import ShowDishPage from "./Pages/ShowDishPage";
 import ReservationPage from "./Pages/ReservationPage";
-import ChefDashboard from "./Pages/ChefDashboard";
+
+import DashboardPage from "./Pages/DashboardPage";
+import ProfileOrDashboard from "./Pages/ProfileOrDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import { PageLoader } from "./Components/UI/Loading";
@@ -51,6 +54,24 @@ const RequireAdmin = ({ children }) => {
   return children;
 };
 
+const RequireDeliveryWorker = ({ children }) => {
+  const { user, loading, isDeliverer } = useAuth();
+
+  if (loading) {
+    return <PageLoader label="Loading dashboard..." />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isDeliverer()) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 const RequireChef = ({ children }) => {
   const { user, loading, isChef } = useAuth();
 
@@ -70,9 +91,10 @@ const RequireChef = ({ children }) => {
 };
 
 const ClientOnly = ({ children }) => {
-  const { user, loading, isAdmin, isChef } = useAuth();
+  const { user, loading, isAdmin, isChef, isDeliverer } = useAuth();
 
-  if (loading || !user || isAdmin() || isChef()) {
+  // Hide for admin, chef, or delivery workers
+  if (loading || !user || isAdmin() || isChef() || isDeliverer()) {
     return null;
   }
 
@@ -116,8 +138,9 @@ function App() {
               <Route path="/reservation" element={<AdminRedirect><ReservationPage /></AdminRedirect>} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/profile" element={<AdminRedirect><ProfilePage /></AdminRedirect>} />
+              <Route path="/profile" element={<ProfileOrDashboard />} />
               <Route path="/chef-dashboard" element={<RequireChef><ChefDashboard /></RequireChef>} />
+              <Route path="/delivery-dashboard" element={<RequireDeliveryWorker><DeliveryDashboard /></RequireDeliveryWorker>} />
               <Route path="/admin-dashboard" element={<RequireAdmin><DashboardPage /></RequireAdmin>} />
             </Routes>
           </div>
