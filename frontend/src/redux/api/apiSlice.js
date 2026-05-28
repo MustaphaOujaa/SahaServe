@@ -150,6 +150,34 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Orders'],
     }),
+    getServerActiveOrders: builder.query({
+      query: () => '/server/orders/active',
+      providesTags: ['Orders'],
+      transformResponse: (response) => response.data,
+      async onCacheEntryAdded(_arg, lifecycleApi) {
+        await listenForOrderUpdates(lifecycleApi);
+      },
+    }),
+    getServerHistoryOrders: builder.query({
+      query: () => '/server/orders/history',
+      providesTags: ['Orders'],
+      transformResponse: (response) => response.data,
+    }),
+    markOrderDeliveredServer: builder.mutation({
+      query: (orderId) => ({
+        url: `/server/orders/${orderId}/delivered`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Orders'],
+    }),
+    toggleTableAvailabilityServer: builder.mutation({
+      query: ({ tableId, isAvailable }) => ({
+        url: `/server/tables/${tableId}/availability`,
+        method: 'PATCH',
+        body: { is_available: isAvailable },
+      }),
+      invalidatesTags: ['Tables'],
+    }),
     getReservations: builder.query({
       query: () => '/all-reservations',
       providesTags: ['Reservations'],
@@ -567,4 +595,8 @@ export const {
   useAnalyzeReviewsQuery,
   useAddFavoriteMutation,
   useRemoveFavoriteMutation,
+  useGetServerActiveOrdersQuery,
+  useGetServerHistoryOrdersQuery,
+  useMarkOrderDeliveredServerMutation,
+  useToggleTableAvailabilityServerMutation,
 } = apiSlice;

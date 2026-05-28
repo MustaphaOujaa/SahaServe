@@ -49,7 +49,8 @@ const Navbar = () => {
   const isAdmin = user?.roles?.some((role) => role.name === 'admin') || false;
   const isChef = user?.roles?.some((role) => role.name === 'chef') || false;
   const isDelivery = user?.roles?.some((role) => role.name === 'delivery') || false;
-  const isClient = !isAdmin && !isChef && !isDelivery;
+  const isServer = user?.roles?.some((role) => role.name === 'server') || false;
+  const isClient = !isAdmin && !isChef && !isDelivery && !isServer;
 
   const token = localStorage.getItem('auth_token');
   const isLoggedIn = !!token && user;
@@ -120,8 +121,8 @@ const Navbar = () => {
                   <i className="fas fa-chevron-down text-[0.5rem] opacity-70"></i>
                 </button>
                 <div className={`absolute top-[100%] right-0 w-[200px] bg-white rounded-custom-sm shadow-custom-lg border border-[rgba(200,146,42,0.1)] p-3 flex flex-col gap-1 transition-all duration-300 z-[1001] mt-[10px] ${accountMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-[10px]'}`}>
-                  <Link to={isAdmin ? "/admin-dashboard" : isChef ? "/chef-dashboard" : isDelivery ? "/delivery-dashboard" : "/profile"} className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
-                    <i className={`fas ${isAdmin ? 'fa-chart-line' : isChef ? 'fa-utensils' : isDelivery ? 'fa-truck' : 'fa-user-circle'} text-gold w-[18px]`}></i> {isAdmin ? 'Admin Dashboard' : isChef ? 'Chef Dashboard' : isDelivery ? 'Delivery Dashboard' : 'Client Profile'}
+                  <Link to={isAdmin ? "/admin-dashboard" : isChef ? "/chef-dashboard" : isDelivery ? "/delivery-dashboard" : isServer ? "/server-dashboard" : "/profile"} className="flex items-center gap-3 p-[0.65rem] rounded-[10px] text-text-mid text-[0.85rem] font-medium hover:bg-gold-pale hover:text-gold transition-all">
+                    <i className={`fas ${isAdmin ? 'fa-chart-line' : isChef ? 'fa-utensils' : isDelivery ? 'fa-truck' : isServer ? 'fa-concierge-bell' : 'fa-user-circle'} text-gold w-[18px]`}></i> {isAdmin ? 'Admin Dashboard' : isChef ? 'Chef Dashboard' : isDelivery ? 'Delivery Dashboard' : isServer ? 'Waiter Dashboard' : 'Client Profile'}
                   </Link>
                   <div className="h-[1px] bg-[rgba(200,146,42,0.1)] my-[0.4rem]"></div>
                   <button onClick={handleLogout} disabled={isLoggingOut} className="w-full flex items-center gap-3 p-[0.65rem] rounded-[10px] text-[rgba(231,76,60,0.9)] text-[0.85rem] font-medium hover:bg-[rgba(231,76,60,0.08)] hover:text-[#c0392b] transition-all text-left border-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">

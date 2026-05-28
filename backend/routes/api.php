@@ -11,6 +11,8 @@ use App\Http\Controllers\AI\DishAssistantController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DishController;
 use App\Http\Controllers\Api\DeliveryController;
+use App\Http\Controllers\Api\ServerController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ReviewController;
 
@@ -135,6 +137,14 @@ Route::middleware('auth:sanctum')->group(function () {
     //----REVIEWS----
     Route::middleware('permission:manage-reviews')->group(function () {
         Route::get('/reviews', [ReviewController::class, 'index']);
+    });
+
+    //----SERVER (WAITER)----
+    Route::middleware('role:server|admin')->group(function () {
+        Route::get('/server/orders/active', [ServerController::class, 'activeOrders']);
+        Route::get('/server/orders/history', [ServerController::class, 'historyOrders']);
+        Route::patch('/server/orders/{id}/delivered', [ServerController::class, 'markDelivered']);
+        Route::patch('/server/tables/{id}/availability', [ServerController::class, 'toggleTableAvailability']);
     });
 
     //----RESERVATIONS----
