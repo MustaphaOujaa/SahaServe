@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import DishCard from '../Components/DishCard';
 import { 
   useGetDishQuery, 
@@ -17,6 +18,8 @@ import { normalizeDish } from '../utils/menuTransforms';
 import { toast } from 'react-hot-toast';
 
 const ShowDishPage = () => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const { id } = useParams();
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
@@ -53,7 +56,7 @@ const ShowDishPage = () => {
 
   const formatReviewDate = (value) => {
     if (!value) return '';
-    return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+    return new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
   };
 
   const handleToggleFav = async (e) => {
@@ -62,14 +65,14 @@ const ShowDishPage = () => {
     try {
       if (isFav) {
         await removeFavorite(dish.id).unwrap();
-        toast.success("Removed from favorites");
+        toast.success(t('dishes.removedFromFav'));
       } else {
         await addFavorite(dish.id).unwrap();
-        toast.success("Added to favorites");
+        toast.success(t('dishes.addedToFav'));
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.data?.message || "Failed to update favorites");
+      toast.error(err.data?.message || t('common.error'));
     }
   };
 
@@ -77,10 +80,10 @@ const ShowDishPage = () => {
     if (!isLoggedIn) return navigate('/login');
     try {
       await addToCart({ dish_id: dish.id, quantity: qty }).unwrap();
-      toast.success("Added to cart!");
+      toast.success(t('dishes.addedToCartSuccess'));
     } catch (err) {
       console.error(err);
-      toast.error(err.data?.message || "Failed to add to cart");
+      toast.error(err.data?.message || t('common.error'));
     }
   };
 
@@ -96,20 +99,20 @@ const ShowDishPage = () => {
       }).unwrap();
       setReviewComment('');
       setReviewRating(5);
-      toast.success('Review added. Thank you!');
+      toast.success(t('dishes.reviewAdded'));
     } catch (err) {
       console.error(err);
-      toast.error(err.data?.message || 'Failed to add review');
+      toast.error(err.data?.message || t('common.error'));
     }
   };
 
   const handleDeleteReview = async (reviewId) => {
     try {
       await deleteReview(reviewId).unwrap();
-      toast.success('Review deleted');
+      toast.success(t('dishes.reviewDeleted'));
     } catch (err) {
       console.error(err);
-      toast.error(err.data?.message || 'Failed to delete review');
+      toast.error(err.data?.message || t('common.error'));
     }
   };
 
@@ -130,7 +133,7 @@ const ShowDishPage = () => {
       <div className="min-h-screen bg-cream pt-[72px]">
         <div className="py-20 flex flex-col items-center text-center">
           <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
-          <p className="text-text-mid text-[0.9rem]">Loading dish...</p>
+          <p className="text-text-mid text-[0.9rem]">{t('dishes.loading')}</p>
         </div>
       </div>
     );
@@ -154,10 +157,10 @@ const ShowDishPage = () => {
       <div className="max-w-[1500px] mx-auto px-4 md:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-[0.85rem] text-text-mid mb-8 font-medium">
-          <Link to="/" className="hover:text-gold transition-colors">Home</Link>
-          <i className="fas fa-chevron-right text-[0.6rem]"></i>
-          <Link to="/menu" className="hover:text-gold transition-colors">Menu</Link>
-          <i className="fas fa-chevron-right text-[0.6rem]"></i>
+          <Link to="/" className="hover:text-gold transition-colors">{t('nav.home')}</Link>
+          <i className={`fas fa-chevron-${isRTL ? 'left' : 'right'} text-[0.6rem]`}></i>
+          <Link to="/menu" className="hover:text-gold transition-colors">{t('nav.menu')}</Link>
+          <i className={`fas fa-chevron-${isRTL ? 'left' : 'right'} text-[0.6rem]`}></i>
           <span className="text-gold font-bold">{dish.name}</span>
         </div>
 
@@ -171,7 +174,7 @@ const ShowDishPage = () => {
                 alt={dish.name} 
                 className="w-full h-full object-cover min-h-[300px] md:min-h-[400px] transition-transform duration-700 group-hover:scale-105" 
               />
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+              <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} flex flex-wrap gap-2`}>
                 {dish.badges.map((b, i) => (
                   <span key={i} className={`px-3 py-1 rounded-full text-[0.75rem] font-bold tracking-[0.05em] uppercase text-white shadow-md ${
                     b === "Chef's Pick" ? 'bg-gold' : 
@@ -180,14 +183,14 @@ const ShowDishPage = () => {
                     b === "Popular" ? 'bg-brown-dark text-gold-light' : 
                     b === "New" ? 'bg-[#9b59b6]' : 'bg-gold'
                   }`}>
-                    {b}
+                    {t(`dishes.badges.${b}`, b)}
                   </span>
                 ))}
               </div>
               <button 
                 onClick={handleToggleFav}
                 disabled={isAddingFav || isRemovingFav}
-                className={`absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md transition-colors cursor-pointer z-10 disabled:opacity-70 disabled:cursor-not-allowed ${isFav ? 'text-[#e74c3c] hover:text-[#c0392b]' : 'text-text-mid hover:text-[#e74c3c]'}`}
+                className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md transition-colors cursor-pointer z-10 disabled:opacity-70 disabled:cursor-not-allowed ${isFav ? 'text-[#e74c3c] hover:text-[#c0392b]' : 'text-text-mid hover:text-[#e74c3c]'}`}
               >
                 {isAddingFav || isRemovingFav ? (
                   <i className="fas fa-spinner fa-spin text-lg"></i>
@@ -229,7 +232,7 @@ const ShowDishPage = () => {
               <div className="flex items-center gap-1.5 text-gold text-[1.1rem]">
                 <i className="fas fa-star"></i>
                 <span className="font-bold text-brown-dark">{averageRating || '0.0'}</span>
-                <span className="text-text-mid text-[0.85rem] font-normal">({reviewCount} Reviews)</span>
+                <span className="text-text-mid text-[0.85rem] font-normal">({t('dishes.reviewsTab', { count: reviewCount })})</span>
               </div>
             </div>
 
@@ -240,18 +243,18 @@ const ShowDishPage = () => {
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-cream rounded-[12px] p-4 flex flex-col items-center justify-center text-center gap-1">
                 <i className="fas fa-clock text-gold text-xl mb-1"></i>
-                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">Prep Time</span>
+                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">{t('dishes.prepTime')}</span>
                 <span className="text-[1.1rem] font-bold text-brown-dark">{dish.time}</span>
               </div>
               <div className="bg-cream rounded-[12px] p-4 flex flex-col items-center justify-center text-center gap-1">
                 <i className="fas fa-weight-hanging text-gold text-xl mb-1"></i>
-                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">Weight</span>
+                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">{t('dishes.weight')}</span>
                 <span className="text-[1.1rem] font-bold text-brown-dark">{dish.weight}</span>
               </div>
               <div className="bg-cream rounded-[12px] p-4 flex flex-col items-center justify-center text-center gap-1">
                 <i className="fas fa-fire-alt text-gold text-xl mb-1"></i>
-                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">Calories</span>
-                <span className="text-[1.1rem] font-bold text-brown-dark">{dish.kcal} kcal</span>
+                <span className="text-[0.8rem] text-text-mid uppercase font-bold tracking-wider">{t('dishes.calories')}</span>
+                <span className="text-[1.1rem] font-bold text-brown-dark">{dish.kcal} {t('dishes.kcal')}</span>
               </div>
             </div>
 
@@ -260,7 +263,7 @@ const ShowDishPage = () => {
                 {dish.price.toFixed(2)} DH
               </span>
               
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 xl:ml-auto">
+              <div className={`flex flex-col sm:flex-row sm:items-center gap-4 ${isRTL ? 'xl:mr-auto' : 'xl:ml-auto'}`}>
                 <div className="flex items-center bg-cream rounded-full p-1 border border-beige">
                   <button 
                     onClick={() => setQty(Math.max(1, qty - 1))}
@@ -288,7 +291,7 @@ const ShowDishPage = () => {
                   ) : (
                     <i className="fas fa-shopping-bag text-[0.95rem]"></i>
                   )}
-                  <span>{isAddingToCart ? 'Adding...' : 'Add to Cart'}</span>
+                  <span>{isAddingToCart ? t('dishes.adding') : t('dishes.addToCart')}</span>
                 </button>
               </div>
             </div>
@@ -302,27 +305,26 @@ const ShowDishPage = () => {
               onClick={() => setActiveTab('description')}
               className={`pb-4 text-[1.1rem] font-bold transition-colors relative cursor-pointer ${activeTab === 'description' ? 'text-gold' : 'text-text-mid hover:text-brown-dark'}`}
             >
-              Detailed Info
+              {t('dishes.detailedInfo')}
               {activeTab === 'description' && <span className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-gold rounded-t-full"></span>}
             </button>
             <button 
               onClick={() => setActiveTab('reviews')}
               className={`pb-4 text-[1.1rem] font-bold transition-colors relative cursor-pointer ${activeTab === 'reviews' ? 'text-gold' : 'text-text-mid hover:text-brown-dark'}`}
             >
-              Reviews ({reviewCount})
+              {t('dishes.reviewsTab', { count: reviewCount })}
               {activeTab === 'reviews' && <span className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-gold rounded-t-full"></span>}
             </button>
           </div>
 
           {activeTab === 'description' && (
             <div className="animate-[fadeUp_0.3s_ease_both]">
-              <h3 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-4">About This Dish</h3>
+              <h3 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-4">{t('dishes.about')}</h3>
               <p className="text-[1.05rem] text-text-mid leading-relaxed mb-6">
-                Our {dish.name} is prepared daily using the freshest local ingredients. 
-                {dish.description} The blend of authentic spices and careful preparation guarantees a taste that transports you straight to the heart of Morocco.
+                {dish.description} {t('dishes.ingredientsList')}
               </p>
-              <h4 className="font-bold text-brown-dark mb-2">Ingredients</h4>
-              <ul className="list-disc pl-5 text-text-mid space-y-1">
+              <h4 className="font-bold text-brown-dark mb-2">{t('dishes.ingredients')}</h4>
+              <ul className={`list-disc ${isRTL ? 'pr-5' : 'pl-5'} text-text-mid space-y-1`}>
                 <li>Locally sourced primary ingredients</li>
                 <li>Signature Moroccan spice blend (Ras el Hanout, Cumin, Saffron)</li>
                 <li>Fresh herbs (Cilantro, Parsley, Mint)</li>
@@ -335,19 +337,19 @@ const ShowDishPage = () => {
             <div className="animate-[fadeUp_0.3s_ease_both]">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
                 <div>
-                  <h3 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark">Customer Reviews</h3>
+                  <h3 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark">{t('dishes.customerReviews')}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex text-gold text-[1.1rem]">
                       {[...Array(5)].map((_, i) => (
                         <i key={i} className={i < Math.round(averageRating) ? "fas fa-star" : "far fa-star"}></i>
                       ))}
                     </div>
-                    <span className="font-bold text-brown-dark text-[1.1rem]">{averageRating || '0.0'} out of 5</span>
+                    <span className="font-bold text-brown-dark text-[1.1rem]">{t('dishes.outOf5', { rating: averageRating || '0.0' })}</span>
                   </div>
                 </div>
                 <form onSubmit={handleSubmitReview} className="w-full lg:max-w-[520px] bg-cream rounded-[16px] border border-beige p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                    <label htmlFor="review-rating" className="font-bold text-brown-dark text-[0.9rem]">Your rating</label>
+                    <label htmlFor="review-rating" className="font-bold text-brown-dark text-[0.9rem]">{t('dishes.yourRating')}</label>
                     <select
                       id="review-rating"
                       value={reviewRating}
@@ -356,7 +358,7 @@ const ShowDishPage = () => {
                       className="h-10 rounded-full border border-beige bg-white px-4 text-brown-dark font-semibold outline-none focus:border-gold"
                     >
                       {[5, 4, 3, 2, 1].map(value => (
-                        <option key={value} value={value}>{value} star{value > 1 ? 's' : ''}</option>
+                        <option key={value} value={value}>{value === 1 ? t('dishes.star') : t('dishes.stars', { count: value })}</option>
                       ))}
                     </select>
                   </div>
@@ -364,17 +366,17 @@ const ShowDishPage = () => {
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     disabled={!isLoggedIn || hasReviewed || isSubmittingReview}
-                    placeholder={isLoggedIn ? (hasReviewed ? 'You already reviewed this dish.' : 'Write your comment...') : 'Log in to write a review.'}
+                    placeholder={isLoggedIn ? (hasReviewed ? t('dishes.alreadyReviewed') : t('dishes.writeComment')) : t('dishes.loginToReview')}
                     className="w-full min-h-[96px] rounded-[12px] border border-beige bg-white px-4 py-3 text-[0.95rem] text-brown-dark outline-none resize-y focus:border-gold disabled:bg-white/70"
                   />
-                  <div className="mt-3 flex justify-end">
+                  <div className={`mt-3 flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                     <button
                       type="submit"
                       disabled={!isLoggedIn || hasReviewed || isSubmittingReview}
                       className="inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-full bg-gold px-5 text-white font-bold text-[0.9rem] hover:bg-brown transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {isSubmittingReview && <i className="fas fa-spinner fa-spin"></i>}
-                      <span>{isSubmittingReview ? 'Sending...' : 'Post Review'}</span>
+                      <span>{isSubmittingReview ? t('dishes.sending') : t('dishes.postReview')}</span>
                     </button>
                   </div>
                 </form>
@@ -383,13 +385,13 @@ const ShowDishPage = () => {
               {(isReviewsLoading || isReviewsFetching) && (
                 <div className="py-8 text-center text-text-mid">
                   <i className="fas fa-spinner fa-spin text-gold mr-2"></i>
-                  Loading reviews...
+                  {t('common.loading')}
                 </div>
               )}
 
               {!isReviewsLoading && liveReviews.length === 0 && (
                 <div className="bg-cream rounded-[16px] p-6 border border-beige text-text-mid">
-                  No reviews yet. Be the first to share your thoughts.
+                  {t('dishes.noReviews')}
                 </div>
               )}
 
@@ -402,7 +404,7 @@ const ShowDishPage = () => {
                           {(review.user?.name || 'G').charAt(0)}
                         </div>
                         <div>
-                          <h4 className="font-bold text-brown-dark">{review.user?.name || 'Guest'}</h4>
+                          <h4 className="font-bold text-brown-dark">{review.user?.name || t('dishes.guest')}</h4>
                           <span className="text-[0.75rem] text-text-mid">{formatReviewDate(review.created_at)}</span>
                         </div>
                       </div>
@@ -425,7 +427,7 @@ const ShowDishPage = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-[0.95rem] text-text-mid">{review.comment || 'No comment provided.'}</p>
+                    <p className="text-[0.95rem] text-text-mid">{review.comment || t('dishes.noComment')}</p>
                   </div>
                 ))}
               </div>
@@ -436,7 +438,7 @@ const ShowDishPage = () => {
         {/* Recommendations */}
         <div className="mb-12 animate-[fadeUp_0.4s_0.2s_ease_both]">
           <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark mb-6 border-b border-beige pb-3">
-            You Might Also Like
+            {t('dishes.youMightLike')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {recommendations.map(rec => (

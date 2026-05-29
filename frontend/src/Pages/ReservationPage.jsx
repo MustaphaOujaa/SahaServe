@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGetTablesQuery, useCreateReservationMutation } from '../redux/api/apiSlice';
 import { PageLoader } from '../Components/UI/Loading';
 
 const ReservationPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: tables = [], isLoading: tablesLoading } = useGetTablesQuery(true); // Fetch available tables
   const [createReservation, { isLoading: isSubmitting }] = useCreateReservationMutation();
@@ -29,12 +31,12 @@ const ReservationPage = () => {
       const selectedTable = tables.find(t => t.id === Number(formData.tableId));
       if (selectedTable && selectedTable.capacity < formData.guests) {
         setFormData(prev => ({ ...prev, tableId: '' }));
-        setTableWarning(`The previously selected table cannot accommodate ${formData.guests} guests.`);
+        setTableWarning(t('reservations.tableWarning', { guests: formData.guests }));
       } else {
         setTableWarning('');
       }
     }
-  }, [formData.guests, formData.tableId, tables]);
+  }, [formData.guests, formData.tableId, tables, t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,7 +49,7 @@ const ReservationPage = () => {
     
     const selected = tables.find(t => t.id === tableId);
     if (selected && selected.capacity < formData.guests) {
-      setTableWarning(`Warning: This table has a maximum capacity of ${selected.capacity}.`);
+      setTableWarning(t('reservations.tableMaxCapacityWarning', { capacity: selected.capacity }));
     } else {
       setTableWarning('');
     }
@@ -56,18 +58,18 @@ const ReservationPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.date || !formData.start_time || !formData.end_time || !formData.tableId) {
-      toast.error("Please fill in all required fields.");
+      toast.error(t('reservations.fillRequired'));
       return;
     }
 
     if (formData.start_time >= formData.end_time) {
-      toast.error("End time must be after start time.");
+      toast.error(t('reservations.endTimeError'));
       return;
     }
     
     const selected = tables.find(t => t.id === Number(formData.tableId));
     if (selected && selected.capacity < formData.guests) {
-      toast.error(`Table cannot take ${formData.guests} guests! Please choose another table.`);
+      toast.error(t('reservations.tableCapacityError', { guests: formData.guests }));
       return;
     }
 
@@ -81,15 +83,15 @@ const ReservationPage = () => {
       };
       
       const response = await createReservation(payload).unwrap();
-      toast.success(response.message || "Reservation confirmed successfully!");
+      toast.success(response.message || t('reservations.successMsg'));
       navigate('/profile');
     } catch (err) {
-      toast.error(err.data?.message || err.data?.errors?.table_id?.[0] || "Failed to make reservation. Time slot might be taken.");
+      toast.error(err.data?.message || err.data?.errors?.table_id?.[0] || t('reservations.failMsg'));
     }
   };
 
   if (tablesLoading) {
-    return <PageLoader label="Loading tables..." />;
+    return <PageLoader label={t('reservations.loadingTables')} />;
   }
 
   // Get minimum date (today) for date picker
@@ -105,10 +107,10 @@ const ReservationPage = () => {
       <div className="w-full max-w-4xl px-4 z-10 flex flex-col items-center">
         
         <div className="text-center mb-12 animate-[fadeDown_0.6s_ease_both]">
-          <span className="text-gold text-sm font-bold tracking-widest uppercase mb-2 block">Experience SahaServe</span>
-          <h1 className="font-['Cormorant_Garamond'] text-5xl md:text-6xl font-bold text-brown-dark mb-4">Book Your Table</h1>
+          <span className="text-gold text-sm font-bold tracking-widest uppercase mb-2 block">{t('reservations.experience')}</span>
+          <h1 className="font-['Cormorant_Garamond'] text-5xl md:text-6xl font-bold text-brown-dark mb-4">{t('reservations.bookTable')}</h1>
           <p className="text-text-mid max-w-lg mx-auto text-[0.95rem] leading-relaxed">
-            Reserve your spot for an unforgettable dining experience. Select your preferred time, table, and let us take care of the rest.
+            {t('reservations.reservationSub')}
           </p>
         </div>
 
@@ -120,15 +122,15 @@ const ReservationPage = () => {
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
               
               <div className="relative z-10">
-                <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-6 text-gold">Reservation Details</h3>
+                <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-6 text-gold">{t('reservations.details')}</h3>
                 
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-10 h-10 rounded-full bg-[rgba(200,146,42,0.15)] flex items-center justify-center text-gold shrink-0">
                     <i className="fas fa-clock"></i>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[0.9rem] mb-1">Opening Hours</h4>
-                    <p className="text-[0.8rem] text-gray-300 opacity-80">Mon-Sun: 11:00 AM - 11:00 PM</p>
+                    <h4 className="font-semibold text-[0.9rem] mb-1">{t('reservations.openingHours')}</h4>
+                    <p className="text-[0.8rem] text-gray-300 opacity-80">{t('reservations.openingHoursVal')}</p>
                   </div>
                 </div>
 
@@ -137,8 +139,8 @@ const ReservationPage = () => {
                     <i className="fas fa-map-marker-alt"></i>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[0.9rem] mb-1">Location</h4>
-                    <p className="text-[0.8rem] text-gray-300 opacity-80">123 Culinary Avenue, Food District</p>
+                    <h4 className="font-semibold text-[0.9rem] mb-1">{t('reservations.location')}</h4>
+                    <p className="text-[0.8rem] text-gray-300 opacity-80">{t('reservations.locationVal')}</p>
                   </div>
                 </div>
 
@@ -147,15 +149,15 @@ const ReservationPage = () => {
                     <i className="fas fa-phone-alt"></i>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[0.9rem] mb-1">Contact Us</h4>
-                    <p className="text-[0.8rem] text-gray-300 opacity-80">+1 234 567 890</p>
+                    <h4 className="font-semibold text-[0.9rem] mb-1">{t('reservations.contactUs')}</h4>
+                    <p className="text-[0.8rem] text-gray-300 opacity-80">{t('reservations.contactPhone')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="relative z-10 mt-12 pt-8 border-t border-[rgba(255,255,255,0.1)]">
                 <p className="text-[0.85rem] italic text-gold-light">
-                  "Good food is very often, even most often, simple food."
+                  {t('reservations.quote')}
                 </p>
               </div>
             </div>
@@ -166,7 +168,7 @@ const ReservationPage = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">Date *</label>
+                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.date')} *</label>
                     <div className="relative">
                       <i className="fas fa-calendar-alt absolute left-4 top-1/2 -translate-y-1/2 text-gold opacity-70"></i>
                       <input 
@@ -182,7 +184,7 @@ const ReservationPage = () => {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">Start Time *</label>
+                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.startTime')} *</label>
                     <div className="relative">
                       <i className="fas fa-clock absolute left-4 top-1/2 -translate-y-1/2 text-gold opacity-70"></i>
                       <input 
@@ -197,7 +199,7 @@ const ReservationPage = () => {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">End Time *</label>
+                    <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.endTime')} *</label>
                     <div className="relative">
                       <i className="fas fa-clock absolute left-4 top-1/2 -translate-y-1/2 text-gold opacity-70"></i>
                       <input 
@@ -213,7 +215,7 @@ const ReservationPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">Number of Guests *</label>
+                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.guestsCount')} *</label>
                   <div className="relative flex items-center max-w-[200px]">
                     <button 
                       type="button" 
@@ -243,7 +245,7 @@ const ReservationPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">Select Table *</label>
+                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.selectTable')} *</label>
                   <div className="relative">
                     <i className="fas fa-chair absolute left-4 top-1/2 -translate-y-1/2 text-gold opacity-70"></i>
                     <select 
@@ -253,10 +255,10 @@ const ReservationPage = () => {
                       className="w-full pl-12 pr-10 py-3 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all appearance-none cursor-pointer"
                       required
                     >
-                      <option value="" disabled>Choose a suitable table</option>
+                      <option value="" disabled>{t('reservations.chooseTablePlaceholder')}</option>
                       {availableTables.map(table => (
                         <option key={table.id} value={table.id}>
-                          {table.table_number || table.name || `Table ${table.id}`} - Capacity: {table.capacity}
+                          {table.table_number || table.name || `${t('profile.table')} ${table.id}`} - {t('reservations.capacityLabel', { capacity: table.capacity })}
                         </option>
                       ))}
                     </select>
@@ -264,7 +266,7 @@ const ReservationPage = () => {
                   </div>
                   {availableTables.length === 0 && formData.guests > 0 && (
                     <p className="text-red-500 text-[0.8rem] mt-1 flex items-center gap-1">
-                      <i className="fas fa-exclamation-circle"></i> No tables available for {formData.guests} guests.
+                      <i className="fas fa-exclamation-circle"></i> {t('reservations.noTablesForGuests', { guests: formData.guests })}
                     </p>
                   )}
                   {tableWarning && (
@@ -275,13 +277,13 @@ const ReservationPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">Special Requests (Optional)</label>
+                  <label className="text-[0.85rem] font-semibold text-brown-dark uppercase tracking-wider">{t('reservations.specialRequests')}</label>
                   <textarea 
                     name="specialRequests"
                     value={formData.specialRequests}
                     onChange={handleChange}
                     rows="3"
-                    placeholder="E.g., Anniversary, Birthday, Allergy information..."
+                    placeholder={t('reservations.specialRequestsPlaceholder')}
                     className="w-full p-4 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all resize-none"
                   ></textarea>
                 </div>
@@ -291,8 +293,8 @@ const ReservationPage = () => {
                   disabled={availableTables.length === 0 || isSubmitting}
                   className="mt-4 w-full py-4 rounded-[50px] bg-gold text-white font-bold text-[1rem] tracking-wide shadow-[0_8px_20px_rgba(200,146,42,0.3)] hover:bg-brown hover:-translate-y-1 hover:shadow-[0_12px_25px_rgba(200,146,42,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-gold flex justify-center items-center gap-2"
                 >
-                  {isSubmitting ? 'Confirming...' : (
-                    <>Confirm Reservation <i className="fas fa-arrow-right text-[0.9rem]"></i></>
+                  {isSubmitting ? t('reservations.confirming') : (
+                    <>{t('reservations.confirmReservation')} <i className="fas fa-arrow-right text-[0.9rem]"></i></>
                   )}
                 </button>
               </form>

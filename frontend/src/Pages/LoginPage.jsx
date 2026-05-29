@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,13 +43,13 @@ const LoginPage = () => {
             navigate(getPostLoginPath(result.user), { replace: true });
           }, 1500);
         } else {
-          setError(result.error || 'Google authentication failed');
+          setError(result.error || t('errors.googleFailed'));
           triggerShake();
         }
       };
       handleTokenLogin();
     }
-  }, [navigate, loginWithToken]);
+  }, [navigate, loginWithToken, t]);
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -66,7 +68,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password.');
+      setError(t('errors.loginRequired'));
       triggerShake();
       return;
     }
@@ -83,7 +85,7 @@ const LoginPage = () => {
         navigate(getPostLoginPath(result.user), { replace: true });
       }, 1500);
     } else {
-      setError(result.error || 'Invalid credentials');
+      setError(result.error || t('errors.invalidCredentials'));
       triggerShake();
     }
   };
@@ -96,7 +98,7 @@ const LoginPage = () => {
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
     if (!forgotEmail) {
-      toast.error('Please enter your email address');
+      toast.error(t('errors.emailRequired') || 'Please enter your email address');
       return;
     }
     setIsForgotLoading(true);
@@ -119,20 +121,19 @@ const LoginPage = () => {
         
         <div className="relative z-[2]">
           <span className="inline-block mb-[1.2rem] px-4 py-[0.3rem] rounded-[50px] border border-[rgba(200,146,42,0.5)] text-gold-light text-[0.75rem] tracking-[0.18em] uppercase">
-            ✦ Welcome Back · Morocco
+            {t('auth.welcomeBack')}
           </span>
           <h2 className="font-['Cormorant_Garamond'] text-[2.6rem] font-bold leading-[1.15] text-white mb-4">
-            Good to see<br /><em className="text-gold-light italic not-italic">you again</em>
+            {t('auth.goodToSee')}<br /><em className="text-gold-light italic not-italic">{t('auth.youAgain')}</em>
           </h2>
           <p className="text-[rgba(255,255,255,0.6)] text-[0.9rem] leading-[1.75] mb-8">
-            Sign in and pick up right where you left off — your reservations,
-            loyalty points, and personal preferences are all waiting for you.
+            {t('auth.loginSub')}
           </p>
 
           <div className="bg-[rgba(255,255,255,0.07)] border border-[rgba(200,146,42,0.2)] rounded-2xl p-[1.3rem_1.4rem] mb-6">
             <div className="text-gold text-[0.8rem] mb-[0.6rem]">★★★★★</div>
             <p className="font-['Cormorant_Garamond'] italic text-[1rem] text-[rgba(255,255,255,0.8)] leading-[1.65] mb-[0.9rem]">
-              "Signing in took seconds — and my favourite table was reserved before I even arrived. Pure magic."
+              "{t('auth.testimonialText') || "Signing in took seconds — and my favourite table was reserved before I even arrived. Pure magic."}"
             </p>
             <div className="flex items-center gap-3">
               <img src="https://i.pravatar.cc/80?img=12" className="w-9 h-9 rounded-full object-cover border-2 border-gold" alt="Avatar" />
@@ -146,11 +147,11 @@ const LoginPage = () => {
           <div className="flex gap-6 mt-6 pt-5 border-t border-[rgba(255,255,255,0.1)]">
             <div className="text-center">
               <span className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-gold-light block">12k+</span>
-              <span className="text-[0.72rem] text-[rgba(255,255,255,0.45)] uppercase tracking-widest">Happy Guests</span>
+              <span className="text-[0.72rem] text-[rgba(255,255,255,0.45)] uppercase tracking-widest">{t('about.happyGuests')}</span>
             </div>
             <div className="text-center">
               <span className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-gold-light block">4.9/5</span>
-              <span className="text-[0.72rem] text-[rgba(255,255,255,0.45)] uppercase tracking-widest">Avg Rating</span>
+              <span className="text-[0.72rem] text-[rgba(255,255,255,0.45)] uppercase tracking-widest">{t('about.avgRating')}</span>
             </div>
           </div>
         </div>
@@ -167,24 +168,24 @@ const LoginPage = () => {
           {!isSuccess ? (
             <>
               <div className="mb-9">
-                <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Secure Access</span>
-                <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark leading-[1.2] mb-1">Sign in to <em className="text-gold italic not-italic">SahaServe</em></h2>
+                <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">{t('auth.secureAccess')}</span>
+                <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark leading-[1.2] mb-1">{t('auth.signInTo')} <em className="text-gold italic not-italic">SahaServe</em></h2>
                 <div className="w-9 h-[3px] bg-gold rounded-[2px] my-3"></div>
-                <p className="text-[0.87rem] text-text-mid leading-[1.6]">Enter your credentials to access your personal dashboard.</p>
+                <p className="text-[0.87rem] text-text-mid leading-[1.6]">{t('auth.enterCredentials')}</p>
               </div>
 
               <div className="flex flex-col gap-3 mb-6">
                 <button type="button" onClick={handleGoogleLogin} className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all">
-                  <i className="fab fa-google text-[#db4437]"></i> Continue with Google
+                  <i className="fab fa-google text-[#db4437]"></i> {t('auth.continueWithGoogle')}
                 </button>
                 <button type="button" className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-dark hover:border-gold hover:bg-gold-pale transition-all opacity-60 cursor-not-allowed">
-                  <i className="fab fa-facebook-f text-[#1877f2]"></i> Continue with Facebook
+                  <i className="fab fa-facebook-f text-[#1877f2]"></i> {t('auth.continueWithFacebook')}
                 </button>
               </div>
 
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex-1 h-[1px] bg-beige"></div>
-                <span className="text-[0.75rem] uppercase tracking-widest text-text-mid">Or with Email</span>
+                <span className="text-[0.75rem] uppercase tracking-widest text-text-mid">{t('auth.orWithEmail')}</span>
                 <div className="flex-1 h-[1px] bg-beige"></div>
               </div>
 
@@ -196,7 +197,7 @@ const LoginPage = () => {
                 )}
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Email Address</label>
+                  <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('auth.emailAddress')}</label>
                   <div className="relative flex items-center">
                     <i className="fas fa-envelope absolute left-4 text-gold text-[0.85rem]"></i>
                     <input type="email" id="inp-email" value={formData.email} onChange={handleInputChange} placeholder="you@example.com" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
@@ -205,8 +206,8 @@ const LoginPage = () => {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide flex justify-between">
-                    Password
-                    <a href="#" className="text-[0.75rem] text-gold font-medium hover:underline" onClick={(e) => { e.preventDefault(); setIsForgotModalOpen(true); }}>Forgot password?</a>
+                    {t('auth.password')}
+                    <a href="#" className="text-[0.75rem] text-gold font-medium hover:underline" onClick={(e) => { e.preventDefault(); setIsForgotModalOpen(true); }}>{t('auth.forgotPassword')}</a>
                   </label>
                   <div className="relative flex items-center">
                     <i className="fas fa-lock absolute left-4 text-gold text-[0.85rem]"></i>
@@ -223,7 +224,7 @@ const LoginPage = () => {
                     <div className={`w-[18px] h-[18px] rounded-[5px] border-[1.5px] border-beige flex items-center justify-center transition-all ${formData.rememberMe ? 'bg-gold border-gold' : 'bg-white'}`}>
                       {formData.rememberMe && <span className="text-white text-[0.7rem] font-bold">✓</span>}
                     </div>
-                    <span className="text-[0.82rem] text-text-mid group-hover:text-gold transition-colors">Remember me for 30 days</span>
+                    <span className="text-[0.82rem] text-text-mid group-hover:text-gold transition-colors">{t('auth.remember30Days')}</span>
                   </label>
                 </div>
 
@@ -231,13 +232,13 @@ const LoginPage = () => {
                   {isLoading ? (
                     <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
                   ) : (
-                    <>Sign In <i className="fas fa-arrow-right text-[0.8rem]"></i></>
+                    <>{t('auth.signIn')} <i className="fas fa-arrow-right text-[0.8rem]"></i></>
                   )}
                 </button>
               </form>
 
               <div className="text-center mt-7 text-[0.83rem] text-text-mid leading-[1.7]">
-                Don't have an account yet? <Link to="/register" className="text-gold font-bold hover:underline">Create an account</Link>
+                {t('auth.noAccount')} <Link to="/register" className="text-gold font-bold hover:underline">{t('auth.createAccount')}</Link>
               </div>
             </>
           ) : (
@@ -245,12 +246,12 @@ const LoginPage = () => {
               <div className="w-20 h-20 rounded-full bg-[linear-gradient(135deg,#c8922a,#a0721e)] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(200,146,42,0.4)] animate-[popIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_both]">
                 <i className="fas fa-check text-2xl text-white"></i>
               </div>
-              <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark mb-2">Welcome Back!</h2>
+              <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark mb-2">{t('auth.welcomeTitle')}</h2>
               <p className="text-[0.9rem] text-text-mid leading-[1.65] max-w-[300px]">
-                You have successfully signed in. Redirecting you to your personal dining dashboard...
+                {t('auth.successLogin')}
               </p>
               <Link to="/" className="w-full max-w-[280px] py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] transition-all flex items-center justify-center gap-2 no-underline mt-7">
-                <i className="fas fa-home text-[0.85rem]"></i> Go to Home
+                <i className="fas fa-home text-[0.85rem]"></i> {t('nav.home')}
               </Link>
             </div>
           )}
@@ -267,10 +268,10 @@ const LoginPage = () => {
             <div className="w-14 h-14 rounded-2xl bg-gold-pale text-gold flex items-center justify-center text-[1.3rem] mb-[1.2rem]">
               <i className="fas fa-key"></i>
             </div>
-            <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-brown-dark mb-[0.4rem]">Forgot Password?</h3>
-            <p className="text-[0.85rem] text-text-mid leading-[1.65] mb-[1.5rem]">No worries! Enter your email address and we'll send you a verification code to reset your password.</p>
+            <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] font-bold text-brown-dark mb-[0.4rem]">{t('auth.forgotPassword')}</h3>
+            <p className="text-[0.85rem] text-text-mid leading-[1.65] mb-[1.5rem]">{t('auth.forgotPasswordDesc') || "No worries! Enter your email address and we'll send you a verification code to reset your password."}</p>
             <div className="flex flex-col gap-1 mb-[1.2rem]">
-              <label className="text-[0.8rem] font-medium text-brown-mid mb-1">Email Address</label>
+              <label className="text-[0.8rem] font-medium text-brown-mid mb-1">{t('auth.emailAddress')}</label>
               <div className="relative flex items-center">
                 <i className="fas fa-envelope absolute left-4 text-gold text-[0.85rem]"></i>
                 <input required type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="you@example.com" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
@@ -280,7 +281,7 @@ const LoginPage = () => {
               {isForgotLoading ? (
                 <div className="w-4 h-4 rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
               ) : (
-                'Send Verification Code'
+                t('auth.sendVerification') || 'Send Verification Code'
               )}
             </button>
           </form>

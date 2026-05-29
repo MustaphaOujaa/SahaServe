@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import DishCard from '../components/DishCard';
 import { useGetFavoritesQuery } from '../redux/api/apiSlice';
 import { normalizeDish } from '../utils/menuTransforms';
 
 const FavouritesPage = () => {
+  const { t } = useTranslation();
   const token = localStorage.getItem('auth_token');
   const isLoggedIn = !!token;
   
@@ -19,7 +21,7 @@ const FavouritesPage = () => {
       <div className="min-h-screen bg-cream pt-[72px]">
         <div className="py-20 flex flex-col items-center text-center">
           <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
-          <p className="text-text-mid text-[0.9rem]">Loading your favourites...</p>
+          <p className="text-text-mid text-[0.9rem]">{t('favourites.loading')}</p>
         </div>
       </div>
     );
@@ -33,9 +35,9 @@ const FavouritesPage = () => {
 
       <div className="relative z-1 pt-32 pb-20 px-[5%]">
         <section className="text-center mb-16 animate-[fadeUp_0.8s_ease_both]">
-          <span className="block mb-4 text-gold font-semibold uppercase tracking-widest text-[0.8rem]">✦ Personal Selection</span>
+          <span className="block mb-4 text-gold font-semibold uppercase tracking-widest text-[0.8rem]">✦ {t('favourites.personalSelection')}</span>
           <h1 className="font-['Cormorant_Garamond'] text-[3.2rem] font-bold text-brown-dark leading-tight">
-            Your <em className="text-gold italic not-italic">Favourites</em>
+            {t('favourites.title').split(' ').slice(0, -1).join(' ')} <em className="text-gold italic not-italic">{t('favourites.title').split(' ').slice(-1)}</em>
           </h1>
         </section>
 
@@ -49,17 +51,17 @@ const FavouritesPage = () => {
                 <i className="fas fa-heart text-[2.5rem] text-gold animate-[pulse_2s_infinite]"></i>
               </div>
               
-              <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark mb-4">Save the Flavours You Love</h2>
+              <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark mb-4">{t('favourites.saveFlavours')}</h2>
               <p className="text-text-mid text-[1rem] leading-relaxed mb-10 max-w-[440px]">
-                To curate your personal collection of favorite Moroccan delicacies and access them across all your devices, please sign in to your account or join our community.
+                {t('favourites.signInMsg')}
               </p>
               
               <div className="flex flex-wrap gap-4 justify-center w-full">
                 <Link to="/login" className="px-8 py-3.5 rounded-full border-[1.5px] border-beige text-text-mid font-semibold text-[0.95rem] hover:border-gold hover:text-gold hover:bg-gold-pale transition-all min-w-[160px]">
-                  Sign In
+                  {t('favourites.signIn')}
                 </Link>
                 <Link to="/register" className="px-8 py-3.5 rounded-full bg-gold text-white font-semibold text-[0.95rem] shadow-[0_4px_14px_rgba(200,146,42,0.35)] hover:bg-brown transition-all min-w-[160px]">
-                  Create Account
+                  {t('favourites.createAccount')}
                 </Link>
               </div>
             </div>
@@ -69,9 +71,9 @@ const FavouritesPage = () => {
             <div className="w-20 h-20 rounded-full bg-gold-pale flex items-center justify-center mb-6">
               <i className="far fa-heart text-2xl text-gold"></i>
             </div>
-            <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-2">No favourites yet</h2>
-            <p className="text-text-mid mb-8">Start exploring our menu and heart your top dishes!</p>
-            <Link to="/menu" className="btn btn-gold">Browse Menu</Link>
+            <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark mb-2">{t('favourites.noFavourites')}</h2>
+            <p className="text-text-mid mb-8">{t('favourites.startExploring')}</p>
+            <Link to="/menu" className="btn btn-gold">{t('favourites.browseMenu')}</Link>
           </section>
         ) : (
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 animate-[fadeUp_0.8s_0.2s_ease_both]">

@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DishCard from '../Components/DishCard';
 import { useGetCategoriesQuery, useGetDishesQuery, useGetTagsQuery } from '../redux/api/apiSlice';
 import { normalizeCategory, normalizeDish, normalizeTag, tagMatchesDish } from '../utils/menuTransforms';
 
 const MenuPage = () => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeTags, setActiveTags] = useState([]);
@@ -18,8 +20,8 @@ const MenuPage = () => {
 
   const menuDishes = useMemo(() => dishes.map(normalizeDish), [dishes]);
   const categories = useMemo(
-    () => [{ id: 'all', name: 'All', icon: 'fa-border-all' }, ...backendCategories.map(normalizeCategory)],
-    [backendCategories]
+    () => [{ id: 'all', name: t('common.all'), icon: 'fa-border-all' }, ...backendCategories.map(normalizeCategory)],
+    [backendCategories, t]
   );
   const tagFilters = useMemo(
     () => (tagsResponse?.data || []).map(normalizeTag),
@@ -96,13 +98,13 @@ const MenuPage = () => {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(26,15,0,0.82)_40%,rgba(26,15,0,0.3)_100%),url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600&q=85')] bg-center bg-cover no-repeat"></div>
         <div className="relative z-[1] px-[5%] w-full">
           <span className="inline-block mb-3 px-4 py-1 rounded-full border border-[rgba(200,146,42,0.5)] text-gold-light text-[0.72rem] tracking-[0.18em] uppercase">
-            Our Full Menu
+            {t('menu.fullMenuTag')}
           </span>
           <h1 className="font-['Cormorant_Garamond'] text-[clamp(2.2rem,5vw,3.4rem)] font-bold text-white leading-[1.1] mb-2">
-            Explore Our<br /><em className="text-gold-light italic not-italic">Flavours</em>
+            {t('menu.exploreTitle1')}<br /><em className="text-gold-light italic not-italic">{t('menu.exploreTitle2')}</em>
           </h1>
           <p className="text-[rgba(255,255,255,0.65)] text-[0.92rem]">
-            From hearty traditional dishes to light bites, crafted fresh every day.
+            {t('menu.exploreSub')}
           </p>
         </div>
       </div>
@@ -113,7 +115,7 @@ const MenuPage = () => {
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gold text-[0.85rem]"></i>
             <input
               type="text"
-              placeholder="Search dishes..."
+              placeholder={t('menu.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.85rem] outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.1)] transition-all"
@@ -150,9 +152,9 @@ const MenuPage = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="pl-4 pr-10 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.8rem] text-text-mid outline-none cursor-pointer appearance-none focus:border-gold transition-all"
             >
-              <option value="default">Sort: Default</option>
-              <option value="rating">Top Rated</option>
-              <option value="name">Name A-Z</option>
+              <option value="default">{t('menu.sortDefault')}</option>
+              <option value="rating">{t('menu.sortRating')}</option>
+              <option value="name">{t('menu.sortName')}</option>
             </select>
             <i className="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gold text-[0.75rem] pointer-events-none"></i>
           </div>
@@ -160,7 +162,7 @@ const MenuPage = () => {
           {highestPrice > 0 && (
             <div className="flex items-center gap-3 min-w-[220px]">
               <label htmlFor="max-price" className="text-[0.78rem] font-semibold text-text-mid whitespace-nowrap">
-                Up to <span className="text-gold">{selectedMaxPrice.toFixed(0)} DH</span>
+                {t('menu.upTo')} <span className="text-gold">{selectedMaxPrice.toFixed(0)} DH</span>
               </label>
               <input
                 id="max-price"
@@ -176,7 +178,7 @@ const MenuPage = () => {
           )}
 
           <span className="text-[0.78rem] text-text-mid whitespace-nowrap">
-            <strong className="text-gold font-bold">{filteredDishes.length}</strong> dishes
+            <strong className="text-gold font-bold">{filteredDishes.length}</strong> {t('menu.dishesCount')}
           </span>
         </div>
       </div>
@@ -185,15 +187,15 @@ const MenuPage = () => {
         {isLoading && (
           <div className="py-20 flex flex-col items-center text-center">
             <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
-            <p className="text-text-mid text-[0.9rem]">Loading menu...</p>
+            <p className="text-text-mid text-[0.9rem]">{t('menu.loadingMenu')}</p>
           </div>
         )}
 
         {dishesError && (
           <div className="py-20 flex flex-col items-center text-center">
             <i className="fas fa-triangle-exclamation text-3xl text-gold mb-4"></i>
-            <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">Menu is unavailable</h3>
-            <p className="text-text-mid text-[0.88rem]">Please make sure the backend server is running.</p>
+            <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">{t('menu.menuUnavailable')}</h3>
+            <p className="text-text-mid text-[0.88rem]">{t('menu.backendError')}</p>
           </div>
         )}
 
@@ -201,9 +203,9 @@ const MenuPage = () => {
           filteredDishes.length === 0 ? (
             <div className="py-20 flex flex-col items-center text-center">
               <i className="fas fa-utensils text-4xl mb-4 text-gold"></i>
-              <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">No dishes found</h3>
-              <p className="text-text-mid text-[0.88rem]">Try adjusting your filters or search terms.</p>
-              <button onClick={clearFilters} className="mt-6 text-gold font-medium underline">Clear all filters</button>
+              <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">{t('menu.noDishesFound')}</h3>
+              <p className="text-text-mid text-[0.88rem]">{t('menu.adjustFilters')}</p>
+              <button onClick={clearFilters} className="mt-6 text-gold font-medium underline">{t('menu.clearFilters')}</button>
             </div>
           ) : (
             categories.filter(c => c.id !== 'all').map(cat => {
@@ -245,9 +247,9 @@ const MenuPage = () => {
             {filteredDishes.length === 0 && (
               <div className="col-span-full py-20 flex flex-col items-center text-center">
                 <i className="fas fa-utensils text-4xl mb-4 text-gold"></i>
-                <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">No dishes found</h3>
-                <p className="text-text-mid text-[0.88rem]">Try adjusting your filters or search terms.</p>
-                <button onClick={clearFilters} className="mt-6 text-gold font-medium underline">Clear all filters</button>
+                <h3 className="font-['Cormorant_Garamond'] text-[1.6rem] text-brown-dark font-bold mb-2">{t('menu.noDishesFound')}</h3>
+                <p className="text-text-mid text-[0.88rem]">{t('menu.adjustFilters')}</p>
+                <button onClick={clearFilters} className="mt-6 text-gold font-medium underline">{t('menu.clearFilters')}</button>
               </div>
             )}
           </div>

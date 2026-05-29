@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import {
   useGetServerActiveOrdersQuery,
   useGetServerHistoryOrdersQuery,
@@ -18,8 +19,16 @@ const statusStyles = {
   cancelled: "bg-red-50 text-red-800 border-red-200/60",
 };
 
-function StatusBadge({ value }) {
+function StatusBadge({ value, t }) {
   const isPrepared = value === "prepared";
+  const statusLabels = {
+    pending: t('orders.pending'),
+    confirmed: t('orders.confirmed'),
+    preparing: t('orders.preparing'),
+    prepared: t('orders.prepared'),
+    delivered: t('orders.delivered'),
+    cancelled: t('orders.cancelled'),
+  };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.72rem] font-bold capitalize transition-all duration-300 ${
@@ -27,7 +36,7 @@ function StatusBadge({ value }) {
       } ${isPrepared ? "animate-pulse font-extrabold ring-4 ring-emerald-500/10" : ""}`}
     >
       {isPrepared && <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>}
-      {value === "prepared" ? "Ready to Serve" : value}
+      {isPrepared ? t('orders.readyToServe') || 'Ready to Serve' : (statusLabels[value] || value)}
     </span>
   );
 }
@@ -54,9 +63,9 @@ function AdminCard({ children, className = "" }) {
 }
 
 export default function ServerDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("orders");
 
-  // Removed polling interval to rely entirely on real-time Reverb WebSocket updates
   const { data: activeOrders = [], isLoading: isLoadingActive } = useGetServerActiveOrdersQuery();
   const { data: historyOrders = [], isLoading: isLoadingHistory } = useGetServerHistoryOrdersQuery();
   const { data: tables = [], isLoading: isLoadingTables } = useGetTablesQuery();
@@ -67,54 +76,53 @@ export default function ServerDashboard() {
   const handleMarkServed = async (orderId) => {
     try {
       await markDelivered(orderId).unwrap();
-      toast.success(`Order #${orderId} has been served.`);
+      toast.success(t('orders.orderServed') || `Order #${orderId} has been served.`);
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to mark as served.");
+      toast.error(error?.data?.message || t('errors.serverError'));
     }
   };
 
   const handleToggleTable = async (tableId, currentStatus) => {
     try {
       await toggleTable({ tableId, isAvailable: !currentStatus }).unwrap();
-      toast.success(`Table marked as ${!currentStatus ? "Available" : "Occupied"}.`);
-    } catch (error) {
-      toast.error("Failed to update table status.");
+      toast.success(`Table marked as ${!currentStatus ? t('tables.available') : t('tables.occupied')}.`);
+    } catch {
+      toast.error(t('errors.serverError'));
     }
   };
 
   const formatOrderTime = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return t('common.N/A');
     return new Date(dateString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const readyOrdersCount = useMemo(() => activeOrders.filter((o) => o.status === "prepared").length, [activeOrders]);
 
   if (isLoadingActive || isLoadingTables) {
-    return <PageLoader label="Loading Server Dashboard..." />;
+    return <PageLoader label={t('common.loading')} />;
   }
 
   return (
     <div className="min-h-screen bg-cream text-text-dark p-6 pt-24 font-sans">
       <div className="mx-auto max-w-7xl space-y-8 animate-[fadeUp_0.4s_ease-out]">
-        
-        {/* Header Section */}
+
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="font-['Cormorant_Garamond'] text-[2.8rem] font-bold leading-none tracking-tight text-brown-dark">
-              Waiter <em className="not-italic text-gold">Dashboard</em>
+              {t('nav.waiterDashboard').split(' ')[0]} <em className="not-italic text-gold">{t('nav.waiterDashboard').split(' ').slice(1).join(' ') || 'Dashboard'}</em>
             </h1>
-            <p className="mt-2 text-[0.94rem] text-text-mid">Manage dine-in orders and table availability in real-time.</p>
+            <p className="mt-2 text-[0.94rem] text-text-mid">{t('dashboard.serverDescription') || 'Manage dine-in orders and table availability in real-time.'}</p>
           </div>
 
           <div className="flex shrink-0 gap-3">
             <div className="flex flex-col items-end justify-center rounded-2xl border border-beige bg-white/95 px-6 py-3 shadow-custom">
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-light">Active Orders</span>
+              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-light">{t('dashboard.activeOrders')}</span>
               <span className="font-['Cormorant_Garamond'] text-3xl font-extrabold leading-none text-brown-dark mt-1">
                 {activeOrders.length}
               </span>
             </div>
             <div className="flex flex-col items-end justify-center rounded-2xl border border-beige bg-white/95 px-6 py-3 shadow-custom">
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-emerald-700">Ready to Serve</span>
+              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-emerald-700">{t('dashboard.readyToServe')}</span>
               <span className="font-['Cormorant_Garamond'] text-3xl font-extrabold leading-none text-emerald-600 mt-1 animate-pulse">
                 {readyOrdersCount}
               </span>
@@ -122,7 +130,6 @@ export default function ServerDashboard() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex space-x-1 rounded-full bg-white/90 backdrop-blur-sm p-1.5 shadow-custom border border-beige inline-flex">
           <button
             onClick={() => setActiveTab("orders")}
@@ -131,7 +138,7 @@ export default function ServerDashboard() {
             }`}
           >
             <i className="fas fa-concierge-bell mr-2"></i>
-            Active Orders ({activeOrders.length})
+            {t('dashboard.activeOrders')} ({activeOrders.length})
           </button>
           <button
             onClick={() => setActiveTab("tables")}
@@ -140,7 +147,7 @@ export default function ServerDashboard() {
             }`}
           >
             <i className="fas fa-chair mr-2"></i>
-            Tables Overview ({tables.length})
+            {t('dashboard.tables')} ({tables.length})
           </button>
           <button
             onClick={() => setActiveTab("history")}
@@ -149,19 +156,18 @@ export default function ServerDashboard() {
             }`}
           >
             <i className="fas fa-history mr-2"></i>
-            History ({historyOrders.length})
+            {t('dashboard.history') || 'History'} ({historyOrders.length})
           </button>
         </div>
 
-        {/* Orders Section */}
         {activeTab === "orders" && (
           <div className="space-y-6">
-            <SectionHeader eyebrow="Service" title="Current On-Site Orders" />
+            <SectionHeader eyebrow={t('dashboard.service') || 'Service'} title={t('dashboard.currentOrders') || 'Current On-Site Orders'} />
 
             {activeOrders.length === 0 ? (
               <div className="p-16 text-center text-text-mid bg-white/40 border border-beige/50 rounded-[18px]">
                 <i className="fas fa-clipboard-list text-gold/40 text-3xl mb-3 block"></i>
-                No active dine-in orders right now.
+                {t('dashboard.noActiveOrders')}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -182,25 +188,25 @@ export default function ServerDashboard() {
                         }`}
                       >
                         <div>
-                          <h3 className="text-[1.15rem] font-bold text-brown-dark">Order #{order.id}</h3>
+                          <h3 className="text-[1.15rem] font-bold text-brown-dark">{t('orders.order')} #{order.id}</h3>
                           <span className="text-[0.75rem] text-text-mid flex items-center gap-1 mt-0.5">
                             <i className="far fa-clock"></i> {formatOrderTime(order.created_at)}
                           </span>
                         </div>
-                        <StatusBadge value={order.status} />
+                        <StatusBadge value={order.status} t={t} />
                       </div>
 
                       <div className="px-5 py-3 text-[0.86rem] font-semibold text-brown-mid border-b border-beige/60 bg-white/40 flex items-center gap-2">
                         <i className="fas fa-chair text-gold"></i>
-                        <span>Table {order.table?.number || order.table_id || "N/A"}</span>
+                        <span>{t('orders.table')} {order.table?.number || order.table_id || t('common.N/A')}</span>
                         <span className="text-[0.75rem] font-normal text-text-mid">
-                          ({order.table?.capacity || 4} Seats)
+                          ({order.table?.capacity || 4} {t('reservations.seats')})
                         </span>
                       </div>
 
                       <div className="flex-1 p-5 bg-white/20">
                         <span className="text-[0.7rem] font-bold uppercase tracking-wider text-text-mid block mb-3">
-                          Order Items
+                          {t('orders.items')}
                         </span>
                         <ul className="space-y-3.5">
                           {order.items?.map((item) => (
@@ -210,7 +216,7 @@ export default function ServerDashboard() {
                               </span>
                               <div>
                                 <span className="block text-[0.88rem] font-medium text-brown-dark">
-                                  {item.dish?.name || "Dish"}
+                                  {item.dish?.name || t('dishes.dish')}
                                 </span>
                                 {item.notes && (
                                   <span className="mt-1 block text-[0.75rem] text-[#b84a34] bg-[#f7ece9] px-2 py-0.5 rounded inline-block">
@@ -232,12 +238,12 @@ export default function ServerDashboard() {
                             className="w-full rounded-full bg-gold py-2.5 text-[0.82rem] font-bold text-white transition-all duration-200 hover:bg-brown shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                           >
                             <i className="fas fa-concierge-bell text-[0.85rem] animate-[bobble_1s_infinite]"></i>
-                            <span>Mark as Served</span>
+                            <span>{t('orders.markServed')}</span>
                           </button>
                         ) : (
                           <div className="w-full text-center py-2.5 text-[0.82rem] font-semibold text-text-mid bg-gray-50/70 border border-gray-100 rounded-full flex items-center justify-center gap-2">
                             <i className="fas fa-spinner fa-spin text-gold/80"></i>
-                            <span>Preparing in Kitchen...</span>
+                            <span>{t('orders.preparingInKitchen')}</span>
                           </div>
                         )}
                       </div>
@@ -249,10 +255,9 @@ export default function ServerDashboard() {
           </div>
         )}
 
-        {/* Tables Section */}
         {activeTab === "tables" && (
           <div className="space-y-6">
-            <SectionHeader eyebrow="Floor Plan" title="Manage Tables" />
+            <SectionHeader eyebrow={t('tables.floorPlan')} title={t('dashboard.manageTables') || 'Manage Tables'} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {tables.map((table) => {
@@ -266,7 +271,6 @@ export default function ServerDashboard() {
                         : "border-amber-100 bg-[#fbf9f4] shadow-sm"
                     }`}
                   >
-                    {/* Top status indicator bar */}
                     <div
                       className={`absolute top-0 left-0 right-0 h-1.5 transition-colors ${
                         isAvail ? "bg-emerald-500" : "bg-gold"
@@ -276,7 +280,7 @@ export default function ServerDashboard() {
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-[0.65rem] font-bold uppercase tracking-[0.15em] text-text-light">
-                          Floor Plan
+                          {t('tables.floorPlan')}
                         </span>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.68rem] font-extrabold uppercase tracking-wide ${
@@ -286,16 +290,16 @@ export default function ServerDashboard() {
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${isAvail ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`}
                           />
-                          {isAvail ? "Available" : "Occupied"}
+                          {isAvail ? t('tables.available') : t('tables.occupied')}
                         </span>
                       </div>
 
                       <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold text-brown-dark mb-1">
-                        Table {table.number}
+                        {t('orders.table')} {table.number}
                       </h3>
                       <p className="text-[0.8rem] text-text-mid mb-5 flex items-center gap-1.5">
                         <i className="fas fa-users text-gold/60 text-[0.75rem]"></i>
-                        <span>Capacity: {table.capacity} guests</span>
+                        <span>{t('reservations.capacity')}: {table.capacity} {t('reservations.guests')}</span>
                       </p>
                     </div>
 
@@ -309,7 +313,7 @@ export default function ServerDashboard() {
                       }`}
                     >
                       <i className={`fas ${isAvail ? "fa-user-check" : "fa-door-open"}`}></i>
-                      <span>{isAvail ? "Mark Occupied" : "Mark Available"}</span>
+                      <span>{isAvail ? t('tables.markOccupied') : t('tables.markAvailable')}</span>
                     </button>
                   </div>
                 );
@@ -318,10 +322,9 @@ export default function ServerDashboard() {
           </div>
         )}
 
-        {/* History Section */}
         {activeTab === "history" && (
           <div className="space-y-6">
-            <SectionHeader eyebrow="History" title="Served Orders" />
+            <SectionHeader eyebrow={t('dashboard.history') || 'History'} title={t('dashboard.servedOrders') || 'Served Orders'} />
 
             {isLoadingHistory ? (
               <div className="p-10 text-center">
@@ -334,19 +337,19 @@ export default function ServerDashboard() {
                     <thead>
                       <tr className="border-b border-beige bg-cream/80">
                         <th className="px-6 py-4 text-[0.72rem] font-bold uppercase tracking-[0.15em] text-text-dark">
-                          Order ID
+                          {t('orders.orderId')}
                         </th>
                         <th className="px-6 py-4 text-[0.72rem] font-bold uppercase tracking-[0.15em] text-text-dark">
-                          Time Served
+                          {t('common.time') || 'Time'}
                         </th>
                         <th className="px-6 py-4 text-[0.72rem] font-bold uppercase tracking-[0.15em] text-text-dark">
-                          Table
+                          {t('orders.table')}
                         </th>
                         <th className="px-6 py-4 text-[0.72rem] font-bold uppercase tracking-[0.15em] text-text-dark">
-                          Items
+                          {t('orders.items')}
                         </th>
                         <th className="px-6 py-4 text-[0.72rem] font-bold uppercase tracking-[0.15em] text-text-dark">
-                          Status
+                          {t('common.status')}
                         </th>
                       </tr>
                     </thead>
@@ -355,7 +358,7 @@ export default function ServerDashboard() {
                         <tr>
                           <td colSpan="5" className="px-6 py-10 text-center text-text-mid bg-white/40">
                             <i className="fas fa-receipt text-gold/40 text-2xl mb-2 block"></i>
-                            No served orders yet.
+                            {t('dashboard.noServedOrders') || 'No served orders yet.'}
                           </td>
                         </tr>
                       ) : (
@@ -370,15 +373,15 @@ export default function ServerDashboard() {
                             </td>
                             <td className="px-6 py-4 text-[0.86rem] text-text-mid">
                               <span className="font-semibold text-brown-dark">
-                                Table {order.table?.number || order.table_id || "N/A"}
+                                {t('orders.table')} {order.table?.number || order.table_id || t('common.N/A')}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-[0.86rem] text-text-mid">
                               {order.items?.map((item) => `${item.dish?.name} x${item.quantity}`).join(", ") ||
-                                "No items"}
+                                t('orders.noItems')}
                             </td>
                             <td className="px-6 py-4">
-                              <StatusBadge value={order.status} />
+                              <StatusBadge value={order.status} t={t} />
                             </td>
                           </tr>
                         ))

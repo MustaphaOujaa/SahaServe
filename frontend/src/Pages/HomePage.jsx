@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import DishCard from '../Components/DishCard';
 import { useGetDishesQuery, useGetFavoritesQuery } from '../redux/api/apiSlice';
 import { normalizeDish } from '../utils/menuTransforms';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const sliderRef = useRef(null);
   const { data: dishesData = [], isLoading } = useGetDishesQuery();
 
@@ -41,21 +43,20 @@ const HomePage = () => {
         <div className="absolute inset-0 z-0 bg-[linear-gradient(to_bottom,rgba(26,15,0,0.45)_0%,rgba(26,15,0,0.75)_100%),url('https://images.unsplash.com/photo-1541614101331-1a5a3a194e92?w=1800&q=90')] bg-center bg-cover bg-no-repeat after:content-[''] after:absolute after:inset-0 after:bg-[radial-gradient(ellipse_at_60%_40%,rgba(200,146,42,0.15)_0%,transparent_65%)]"></div>
         <div className="relative z-1 max-w-[720px] px-6 hero-content">
           <span className="inline-block mb-[1.2rem] px-[1.1rem] py-[0.35rem] rounded-[50px] border border-[rgba(200,146,42,0.5)] text-gold-light text-[0.8rem] tracking-[0.15em] uppercase animate-[fadeUp_0.8s_ease_forwards]">
-            ✦ Est. 2018 · Morocco
+            {t('home.heroTag')}
           </span>
           <h1 className="font-['Cormorant_Garamond'] text-[clamp(2.8rem,7vw,5.2rem)] font-bold leading-[1.08] text-white mb-[1.2rem] animate-[fadeUp_0.8s_0.15s_ease_both]">
-            Authentic<br /><em className="text-gold-light italic not-italic">Moroccan</em> Cuisine
+            {t('home.heroTitle').split(' ').slice(0, -1).join(' ')}<br /><em className="text-gold-light italic not-italic">{t('home.heroTitle').split(' ').slice(-1)}</em>
           </h1>
           <p className="text-[1.05rem] text-[rgba(255,255,255,0.75)] max-w-[500px] mx-auto mb-[2.2rem] animate-[fadeUp_0.8s_0.3s_ease_both]">
-            Where ancient spice routes meet modern elegance — every dish tells a
-            story.
+            {t('home.heroSub')}
           </p>
           <div className="flex gap-4 justify-center flex-wrap animate-[fadeUp_0.8s_0.45s_ease_both]">
-            <Link to="/menu" className="btn btn-gold">View Menu</Link>
+            <Link to="/menu" className="btn btn-gold">{t('home.viewMenu')}</Link>
           </div>
         </div>
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[rgba(255,255,255,0.45)] text-[0.75rem] tracking-[0.1em] flex flex-col items-center gap-2 animate-[pulse_2s_infinite]">
-          <span>Scroll</span>
+          <span>{t('common.scroll')}</span>
           <i className="fas fa-chevron-down text-base"></i>
         </div>
       </section>
@@ -63,20 +64,19 @@ const HomePage = () => {
       {/* ─── DISHES ─── */}
       <section id="dishes" className="py-24 px-[5%] bg-white">
         <div className="text-center mb-12 fade-in">
-          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Our Specialties</span>
+          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">{t('home.specialtiesTag')}</span>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(2rem,4vw,3rem)] font-bold text-brown-dark leading-[1.15] mb-2">
-            Popular <em className="text-gold italic not-italic">Dishes</em>
+            {t('home.specialtiesTitle1')} <em className="text-gold italic not-italic">{t('home.specialtiesTitle2')}</em>
           </h2>
           <div className="w-12 h-[3px] bg-gold mx-auto my-4 rounded-[2px]"></div>
           <p className="text-text-mid max-w-[480px] mx-auto leading-[1.7] text-[0.95rem] mb-12">
-            Handcrafted recipes passed down through generations, served with
-            modern flair.
+            {t('home.specialtiesSub')}
           </p>
         </div>
         {isLoading ? (
           <div className="py-12 flex flex-col items-center text-center">
             <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
-            <p className="text-text-mid text-[0.9rem]">Loading dishes...</p>
+            <p className="text-text-mid text-[0.9rem]">{t('home.loadingDishes')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 fade-in">
@@ -94,13 +94,13 @@ const HomePage = () => {
       {/* ─── TESTIMONIALS ─── */}
       <section id="testimonials" className="py-24 px-[5%] bg-brown-dark overflow-hidden">
         <div className="fade-in mb-12">
-          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Reviews</span>
+          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">{t('home.reviewsTag')}</span>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(2rem,4vw,3rem)] font-bold text-white leading-[1.15] mb-2">
-            What Our <em className="text-gold italic not-italic">Customers</em> Say
+            {t('home.reviewsTitle1')} <em className="text-gold italic not-italic">{t('home.reviewsTitle2')}</em> {t('home.reviewsTitle3')}
           </h2>
           <div className="w-12 h-[3px] bg-gold my-4 rounded-[2px]"></div>
           <p className="text-[rgba(255,255,255,0.55)] max-w-[480px] leading-[1.7] text-[0.95rem]">
-            Voices from guests who made memories at our table.
+            {t('home.reviewsSub')}
           </p>
         </div>
         
@@ -177,26 +177,23 @@ const HomePage = () => {
             />
             <div className="absolute -bottom-6 -right-6 bg-gold text-white rounded-[16px] p-[1.2rem_1.5rem] text-center shadow-custom">
               <span className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold block leading-none">15+</span>
-              <span className="text-[0.75rem] uppercase tracking-[0.1em] opacity-85">Years of Tradition</span>
+              <span className="text-[0.75rem] uppercase tracking-[0.1em] opacity-85">{t('home.yearsOfTradition')}</span>
             </div>
           </div>
           <div className="fade-in">
-            <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Our Story</span>
+            <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">{t('home.storyTag')}</span>
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(2rem,4vw,3rem)] font-bold text-brown-dark leading-[1.15] mb-2">
-              Where Tradition<br />Meets <em className="text-gold italic not-italic">Excellence</em>
+              {t('home.storyTitle1')}<br />{t('home.storyTitle2')} <em className="text-gold italic not-italic">{t('home.storyTitle3')}</em>
             </h2>
             <div className="w-12 h-[3px] bg-gold my-4 rounded-[2px]"></div>
             <p className="text-text-mid leading-[1.75] mb-6 text-[0.95rem]">
-              Born from a deep love for Moroccan heritage, SahaServe was founded
-              with a single mission: to share the soul of Moroccan cooking with
-              the world. Every spice is hand-selected, every recipe holds
-              generations of wisdom.
+              {t('home.storySub')}
             </p>
             <div className="flex flex-col gap-[1.1rem] my-8">
               {[
-                { icon: "leaf", title: "Fresh, Local Ingredients", desc: "Sourced daily from local markets to ensure peak flavour and quality in every plate." },
-                { icon: "mortar-pestle", title: "Authentic Recipes", desc: "Passed down through three generations, preserved with care and served with pride." },
-                { icon: "star", title: "Award-Winning Quality", desc: "Recognised by culinary critics across Europe for outstanding authenticity." }
+                { icon: "leaf", title: t('home.feature1Title'), desc: t('home.feature1Desc') },
+                { icon: "mortar-pestle", title: t('home.feature2Title'), desc: t('home.feature2Desc') },
+                { icon: "star", title: t('home.feature3Title'), desc: t('home.feature3Desc') }
               ].map((f, i) => (
                 <div key={i} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-[10px] bg-gold-pale text-gold flex items-center justify-center text-[0.95rem] shrink-0">
@@ -209,9 +206,9 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
-            <a href="#" className="btn btn-gold">
-              Learn More <i className="fas fa-arrow-right text-[0.75rem]"></i>
-            </a>
+            <Link to="/about" className="btn btn-gold">
+              {t('common.learnMore')} <i className="fas fa-arrow-right text-[0.75rem]"></i>
+            </Link>
           </div>
         </div>
       </section>
@@ -219,9 +216,9 @@ const HomePage = () => {
       {/* ─── GALLERY ─── */}
       <section id="gallery" className="py-24 px-[5%] bg-white pb-0 mb-8">
         <div className="text-center mb-12 fade-in">
-          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Visual Story</span>
+          <span className="inline-block mb-2 text-[0.78rem] tracking-[0.18em] uppercase text-gold font-medium">{t('home.galleryTag')}</span>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(2rem,4vw,3rem)] font-bold text-brown-dark leading-[1.15] mb-2">
-            Our <em className="text-gold italic not-italic">Gallery</em>
+            {t('home.galleryTitle1')} <em className="text-gold italic not-italic">{t('home.galleryTitle2')}</em>
           </h2>
           <div className="w-12 h-[3px] bg-gold mx-auto my-4 rounded-[2px]"></div>
         </div>

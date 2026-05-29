@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import {
   useCreateUserMutation,
   useCreateTableMutation,
@@ -33,15 +34,15 @@ import {
 import { ButtonSpinner, LoadingOverlay } from "../Components/UI/Loading";
 import ConfirmDialog from "../Components/UI/ConfirmDialog";
 
-const sections = [
-  { id: "overview", label: "Overview", icon: "fa-border-all" },
-  { id: "users", label: "Users", icon: "fa-users" },
-  { id: "orders", label: "Orders", icon: "fa-receipt" },
-  { id: "reservations", label: "Reservations", icon: "fa-calendar-check" },
-  { id: "tables", label: "Tables", icon: "fa-chair" },
-  { id: "menu", label: "Menu", icon: "fa-utensils" },
-  { id: "ai-services", label: "AI Services", icon: "fa-brain" },
-  { id: "roles", label: "Roles", icon: "fa-shield-alt" },
+const sections = (t) => [
+  { id: "overview", label: t('dashboard.overview'), icon: "fa-border-all" },
+  { id: "users", label: t('dashboard.users'), icon: "fa-users" },
+  { id: "orders", label: t('dashboard.orders'), icon: "fa-receipt" },
+  { id: "reservations", label: t('dashboard.reservations'), icon: "fa-calendar-check" },
+  { id: "tables", label: t('dashboard.tables'), icon: "fa-chair" },
+  { id: "menu", label: t('dashboard.menu'), icon: "fa-utensils" },
+  { id: "ai-services", label: t('dashboard.aiServices'), icon: "fa-brain" },
+  { id: "roles", label: t('dashboard.roles'), icon: "fa-shield-alt" },
 ];
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -406,6 +407,7 @@ function SimpleTable({ columns, rows }) {
 }
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState("overview");
   const [usersPage, setUsersPage] = useState(1);
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
@@ -576,49 +578,49 @@ const DashboardPage = () => {
   const unavailableTablesCount = adminTables.filter((table) => !table.is_available).length;
   const dashboardMetrics = [
     {
-      label: "Revenue",
+      label: t('dashboard.totalRevenue'),
       value: formatMoney(adminOrders.reduce((sum, order) => sum + Number(order.total_price || 0), 0)),
       icon: "fa-chart-line",
-      detail: `${adminOrders.length} order${adminOrders.length === 1 ? "" : "s"} loaded`,
+      detail: `${adminOrders.length} ${adminOrders.length === 1 ? t('orders.order') : t('dashboard.orders')} ${t('common.loaded')}`,
     },
     {
-      label: "Orders",
+      label: t('dashboard.orders'),
       value: String(adminOrders.length),
       icon: "fa-receipt",
-      detail: `${pendingOrdersCount} pending`,
+      detail: `${pendingOrdersCount} ${t('dashboard.pendingOrders')}`,
     },
     {
-      label: "Reservations",
+      label: t('dashboard.reservations'),
       value: String(adminReservations.length),
       icon: "fa-calendar-check",
-      detail: `${todayReservationsCount} today`,
+      detail: `${todayReservationsCount} ${t('common.today')}`,
     },
     {
-      label: "Active Tables",
+      label: t('dashboard.tables'),
       value: `${adminTables.filter((table) => table.is_available).length}/${adminTables.length}`,
       icon: "fa-chair",
-      detail: `${unavailableTablesCount} unavailable`,
+      detail: `${unavailableTablesCount} ${t('common.unavailable')}`,
     },
   ];
 
   function formatMoney(value) {
     const number = Number(value || 0);
-    return `$${number.toFixed(2)}`;
+    return `${number.toFixed(2)} DH`;
   }
 
   const formatOrderItems = (items = []) => {
     if (!items.length) {
-      return "No items";
+      return t('orders.noItems');
     }
 
     return items
-      .map((item) => `${item.dish?.name || "Dish"} x${item.quantity}`)
+      .map((item) => `${item.dish?.name || t('dishes.dish')} x${item.quantity}`)
       .join(", ");
   };
 
   const formatDate = (date) => {
     if (!date) {
-      return "N/A";
+      return t('common.N/A');
     }
 
     return new Date(date).toLocaleDateString();
@@ -755,7 +757,7 @@ const DashboardPage = () => {
     });
   };
 
-  const visibleSections = activeSection === "overview" ? sections.slice(1).map((section) => section.id) : [activeSection];
+  const visibleSections = activeSection === "overview" ? sections(t).slice(1).map((section) => section.id) : [activeSection];
 
   const handleCreateUser = async (event) => {
     event.preventDefault();
@@ -1136,13 +1138,13 @@ const DashboardPage = () => {
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <span className="mb-3 inline-block rounded-full border border-gold/40 px-4 py-1 text-[0.72rem] uppercase tracking-[0.18em] text-gold-light">
-                SahaServe Admin
+                {t('nav.adminDashboard')}
               </span>
               <h1 className="font-['Cormorant_Garamond'] text-[clamp(2.2rem,5vw,3.8rem)] font-bold leading-tight">
-                Dashboard <em className="not-italic text-gold-light">Control</em>
+                {t('dashboard.overview')} <em className="not-italic text-gold-light">{t('common.control') || 'Control'}</em>
               </h1>
               <p className="mt-2 max-w-[620px] text-[0.94rem] text-white/65">
-                A working mockup for users, orders, reservations, tables, menu, reviews, roles, and permissions.
+                {t('dashboard.adminDescription') || 'A working mockup for users, orders, reservations, tables, menu, reviews, roles, and permissions.'}
               </p>
             </div>
             <div className="flex gap-3">
@@ -1163,7 +1165,7 @@ const DashboardPage = () => {
                 className="btn btn-gold disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching ? <ButtonSpinner /> : <i className="fas fa-sync-alt text-[0.75rem]"></i>}
-                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching ? "Refreshing" : "Refresh"}
+                {isUsersFetching || isOrdersFetching || isReservationsFetching || isTablesFetching || isDishesFetching || isCategoriesFetching || isTagsFetching || isReviewAnalysisFetching ? t('common.refreshing') : t('common.refresh')}
               </button>
               <div className="flex flex-wrap items-center gap-2 rounded-full bg-white/10 p-1.5">
                 <select
@@ -1171,9 +1173,9 @@ const DashboardPage = () => {
                   onChange={(event) => setExportReport(event.target.value)}
                   className="rounded-full border border-white/10 bg-brown-dark px-3 py-2 text-[0.78rem] font-semibold text-white outline-none focus:border-gold"
                 >
-                  <option value="orders">Orders</option>
-                  <option value="reservations">Reservations</option>
-                  <option value="review-analysis">Review analysis</option>
+                  <option value="orders">{t('dashboard.orders')}</option>
+                  <option value="reservations">{t('dashboard.reservations')}</option>
+                  <option value="review-analysis">{t('ai.analyzeReviews')}</option>
                 </select>
                 <input
                   type="date"
@@ -1183,7 +1185,7 @@ const DashboardPage = () => {
                 />
                 <button type="button" onClick={handleExportPdf} className="btn bg-white/10 text-white hover:bg-white/15">
                   <i className="fas fa-download text-[0.75rem]"></i>
-                  Export PDF
+                  {t('common.exportPdf') || 'Export PDF'}
                 </button>
               </div>
             </div>
@@ -1208,7 +1210,7 @@ const DashboardPage = () => {
 
       <div className="sticky top-[72px] z-[80] border-b border-[rgba(200,146,42,0.14)] bg-[rgba(250,245,236,0.96)] px-[5%] py-3 shadow-[0_4px_20px_rgba(26,15,0,0.06)] backdrop-blur-md">
         <div className="flex gap-2 overflow-x-auto scrollbar-none">
-          {sections.map((section) => (
+          {sections(t).map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}

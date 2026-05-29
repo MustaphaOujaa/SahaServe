@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import DeliveryDashboard from "./DeliveryDashboard";
 import ServerDashboard from "./ServerDashboard";
@@ -12,10 +13,11 @@ import { PageLoader } from "../Components/UI/Loading";
  * Includes a loading state while the auth context is initializing.
  */
 const ProfileOrDashboard = () => {
+  const { t } = useTranslation();
   const { loading, isDeliverer, isServer } = useAuth();
 
   if (loading) {
-    return <PageLoader label="Loading profile..." />;
+    return <PageLoader label={t('profile.loading')} />;
   }
 
   // If the current user is a delivery worker, show their dashboard.

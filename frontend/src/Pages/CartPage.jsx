@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   useGetCartQuery,
   useUpdateCartItemMutation,
@@ -11,6 +12,7 @@ import {
 import { normalizeDish } from '../utils/menuTransforms';
 
 const CartPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // ── Data fetching ──────────────────────────────────────────────
@@ -70,11 +72,11 @@ const CartPage = () => {
 
     // Client-side guard
     if (orderType === 'home' && !address.trim()) {
-      setOrderError('Please enter a delivery address.');
+      setOrderError(t('cart.errorDeliveryAddress'));
       return;
     }
     if (orderType === 'site' && !selectedTableId) {
-      setOrderError('Please select a table.');
+      setOrderError(t('cart.errorSelectTable'));
       return;
     }
 
@@ -91,7 +93,7 @@ const CartPage = () => {
       setOrderSuccess(true);
     } catch (err) {
       setOrderError(
-        err?.data?.message || err?.data?.errors?.delivery_address?.[0] || 'Order failed. Please try again.'
+        err?.data?.message || err?.data?.errors?.delivery_address?.[0] || t('cart.orderFailed')
       );
     }
   };
@@ -102,7 +104,7 @@ const CartPage = () => {
       <div className="min-h-screen bg-cream pt-[72px]">
         <div className="py-20 flex flex-col items-center text-center">
           <i className="fas fa-spinner fa-spin text-3xl text-gold mb-4"></i>
-          <p className="text-text-mid text-[0.9rem]">Loading your cart...</p>
+          <p className="text-text-mid text-[0.9rem]">{t('cart.loadingCart')}</p>
         </div>
       </div>
     );
@@ -126,10 +128,10 @@ const CartPage = () => {
         <div className="w-24 h-24 rounded-full bg-gold-pale flex items-center justify-center mb-8">
           <i className="fas fa-shopping-basket text-[2.5rem] text-gold"></i>
         </div>
-        <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark mb-4">Your cart is empty</h2>
-        <p className="text-text-mid mb-10 max-w-[400px]">Go back to the menu to add some delicious Moroccan dishes to your selection!</p>
+        <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark mb-4">{t('cart.empty')}</h2>
+        <p className="text-text-mid mb-10 max-w-[400px]">{t('cart.emptyMsg')}</p>
         <Link to="/menu" className="px-8 py-3.5 rounded-full bg-gold text-white font-semibold text-[0.95rem] shadow-[0_4px_14px_rgba(200,146,42,0.35)] hover:bg-brown transition-all">
-          Browse Menu
+          {t('cart.browseMenu')}
         </Link>
       </div>
     );
@@ -143,18 +145,18 @@ const CartPage = () => {
           <i className="fas fa-circle-check text-[3rem] text-green-500"></i>
         </div>
         <h2 className="font-['Cormorant_Garamond'] text-[2.5rem] font-bold text-brown-dark mb-3 animate-[fadeUp_0.5s_0.1s_ease_both]">
-          Order Placed!
+          {t('cart.orderPlaced')}
         </h2>
         <p className="text-text-mid mb-10 max-w-[400px] animate-[fadeUp_0.5s_0.15s_ease_both]">
           {orderType === 'home'
-            ? 'Your meal is on its way. Sit back and relax!'
-            : 'Your order has been sent to the kitchen. Enjoy your meal!'}
+            ? t('cart.homeSuccessMsg')
+            : t('cart.siteSuccessMsg')}
         </p>
         <Link
           to="/menu"
           className="px-8 py-3.5 rounded-full bg-gold text-white font-semibold text-[0.95rem] shadow-[0_4px_14px_rgba(200,146,42,0.35)] hover:bg-brown transition-all animate-[fadeUp_0.5s_0.2s_ease_both]"
         >
-          Back to Menu
+          {t('cart.backToMenu')}
         </Link>
       </div>
     );
@@ -166,7 +168,7 @@ const CartPage = () => {
       <i className={`${icon} text-gold text-[0.85rem] w-4 text-center`}></i>
       <div className="flex flex-col">
         <span className="text-[0.65rem] font-bold text-text-mid uppercase tracking-wider">{label}</span>
-        <span className="text-[0.9rem] font-semibold text-brown-dark">{value || <span className="text-text-mid italic font-normal text-[0.85rem]">Not set</span>}</span>
+        <span className="text-[0.9rem] font-semibold text-brown-dark">{value || <span className="text-text-mid italic font-normal text-[0.85rem]">{t('common.notSet')}</span>}</span>
       </div>
     </div>
   );
@@ -177,9 +179,9 @@ const CartPage = () => {
       <div className="max-w-[1200px] mx-auto">
         <header className="text-center mb-12 animate-[fadeUp_0.6s_ease_both]">
           <h1 className="font-['Cormorant_Garamond'] text-[3rem] font-bold text-brown-dark mb-2">
-            Your Gastronomic <em className="text-gold italic not-italic">Cart</em>
+            {t('cart.gastronomic').split(' ').slice(0, -1).join(' ')} <em className="text-gold italic not-italic">{t('cart.gastronomic').split(' ').slice(-1)}</em>
           </h1>
-          <p className="text-text-mid">Review your selection before we prepare your Moroccan feast.</p>
+          <p className="text-text-mid">{t('cart.reviewSelection')}</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10 items-start">
@@ -187,9 +189,9 @@ const CartPage = () => {
           {/* ── Left Column: Cart Items ───────────────────────── */}
           <div className="bg-white rounded-[24px] shadow-custom p-8 animate-[fadeUp_0.6s_0.1s_ease_both]">
             <div className="flex justify-between items-center mb-8 pb-4 border-b border-beige">
-              <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark">Cart Items</h2>
+              <h2 className="font-['Cormorant_Garamond'] text-[1.8rem] font-bold text-brown-dark">{t('cart.items')}</h2>
               <Link to="/menu" className="text-gold font-semibold text-[0.85rem] flex items-center gap-2 hover:opacity-80">
-                <i className="fas fa-arrow-left"></i> Continue Shopping
+                <i className="fas fa-arrow-left"></i> {t('cart.continueShopping')}
               </Link>
             </div>
 
@@ -204,7 +206,7 @@ const CartPage = () => {
                         className="text-[#e74c3c] text-[0.8rem] flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-all cursor-pointer"
                         onClick={() => removeItem(item.id)}
                       >
-                        <i className="fas fa-trash-can"></i> Remove
+                        <i className="fas fa-trash-can"></i> {t('cart.remove')}
                       </button>
                     </div>
                     <p className="text-text-mid text-[0.85rem] mb-4 line-clamp-2">{item.dish.description}</p>
@@ -233,7 +235,7 @@ const CartPage = () => {
             {/* Order Details Card */}
             <div className="bg-white rounded-[24px] shadow-custom p-8">
               <div className="flex items-center gap-3 font-['Cormorant_Garamond'] text-[1.5rem] font-bold text-brown-dark mb-6">
-                <i className="fas fa-truck-fast text-gold text-[1.2rem]"></i> Order Details
+                <i className="fas fa-truck-fast text-gold text-[1.2rem]"></i> {t('cart.orderDetails')}
               </div>
 
               {/* Order type tabs */}
@@ -242,33 +244,33 @@ const CartPage = () => {
                   className={`flex-1 py-2.5 rounded-full text-[0.85rem] font-semibold transition-all ${orderType === 'home' ? 'bg-gold text-white shadow-lg' : 'text-text-mid'}`}
                   onClick={() => setOrderType('home')}
                 >
-                  <i className="fas fa-house mr-1.5"></i> Home Delivery
+                  <i className="fas fa-house mr-1.5"></i> {t('cart.homeDelivery')}
                 </button>
                 <button
                   className={`flex-1 py-2.5 rounded-full text-[0.85rem] font-semibold transition-all ${orderType === 'site' ? 'bg-gold text-white shadow-lg' : 'text-text-mid'}`}
                   onClick={() => setOrderType('site')}
                 >
-                  <i className="fas fa-utensils mr-1.5"></i> On Site
+                  <i className="fas fa-utensils mr-1.5"></i> {t('cart.onSite')}
                 </button>
               </div>
 
               <div className="flex flex-col gap-3">
                 {/* ── Common: name & phone from profile (read-only) */}
-                <UserInfoRow icon="fas fa-user" label="Full Name" value={profile?.name} />
-                <UserInfoRow icon="fas fa-phone" label="Phone Number" value={profile?.phone_number} />
+                <UserInfoRow icon="fas fa-user" label={t('cart.fullName')} value={profile?.name} />
+                <UserInfoRow icon="fas fa-phone" label={t('cart.phoneNumber')} value={profile?.phone_number} />
 
                 {/* ── Home Delivery: editable address */}
                 {orderType === 'home' ? (
                   <div className="flex flex-col gap-1.5 animate-[fadeUp_0.3s_ease]">
                     <label className="text-[0.7rem] font-bold text-text-mid uppercase tracking-wider">
-                      Delivery Address
-                      <span className="ml-2 text-[0.65rem] text-gold font-normal normal-case">(you can edit this)</span>
+                      {t('cart.deliveryAddress')}
+                      <span className="ml-2 text-[0.65rem] text-gold font-normal normal-case">{t('cart.editAddressHint')}</span>
                     </label>
                     <textarea
                       rows="3"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter your full address..."
+                      placeholder={t('cart.enterAddress')}
                       className="w-full px-4 py-3 rounded-[12px] border-[1.5px] border-beige bg-cream text-[0.9rem] outline-none focus:border-gold transition-all resize-none"
                     />
                   </div>
@@ -276,15 +278,15 @@ const CartPage = () => {
                   /* ── On Site: available tables dropdown */
                   <div className="flex flex-col gap-1.5 animate-[fadeUp_0.3s_ease]">
                     <label className="text-[0.7rem] font-bold text-text-mid uppercase tracking-wider">
-                      Available Table
+                      {t('cart.availableTable')}
                     </label>
                     {tablesLoading ? (
                       <div className="flex items-center gap-2 text-text-mid text-[0.85rem] py-3 px-4 rounded-[12px] bg-cream border border-beige">
-                        <i className="fas fa-spinner fa-spin text-gold"></i> Loading tables…
+                        <i className="fas fa-spinner fa-spin text-gold"></i> {t('cart.loadingTables')}
                       </div>
                     ) : !availableTables?.length ? (
                       <div className="flex items-center gap-2 text-[#e74c3c] text-[0.85rem] py-3 px-4 rounded-[12px] bg-red-50 border border-red-200">
-                        <i className="fas fa-circle-exclamation"></i> No tables available right now.
+                        <i className="fas fa-circle-exclamation"></i> {t('cart.noTablesAvailable')}
                       </div>
                     ) : (
                       <select
@@ -294,7 +296,7 @@ const CartPage = () => {
                       >
                         {availableTables.map((table) => (
                           <option key={table.id} value={String(table.id)}>
-                            Table {table.number} — {table.name} (seats {table.capacity})
+                            {t('cart.tableSelectPlaceholder', { number: table.number, name: table.name, capacity: table.capacity })}
                           </option>
                         ))}
                       </select>
@@ -307,31 +309,31 @@ const CartPage = () => {
             {/* Summary & Payment Card */}
             <div className="bg-white rounded-[24px] shadow-custom p-8">
               <div className="flex items-center gap-3 font-['Cormorant_Garamond'] text-[1.5rem] font-bold text-brown-dark mb-6">
-                <i className="fas fa-receipt text-gold text-[1.2rem]"></i> Order Summary
+                <i className="fas fa-receipt text-gold text-[1.2rem]"></i> {t('cart.orderSummary')}
               </div>
 
               <div className="flex flex-col gap-3 mb-6">
                 <div className="flex justify-between text-text-mid text-[0.95rem]">
-                  <span>Subtotal</span>
+                  <span>{t('cart.subtotal')}</span>
                   <span>{subtotal.toFixed(2)} DH</span>
                 </div>
                 <div className="flex justify-between text-text-mid text-[0.95rem]">
-                  <span>Service Fee</span>
+                  <span>{t('cart.serviceFee')}</span>
                   <span>{serviceFee.toFixed(2)} DH</span>
                 </div>
                 <div className="flex justify-between text-text-mid text-[0.95rem]">
-                  <span>Tax (10%)</span>
+                  <span>{t('cart.tax')}</span>
                   <span>{tax.toFixed(2)} DH</span>
                 </div>
                 <div className="mt-4 pt-4 border-t border-beige flex justify-between items-center text-[1.3rem] font-bold text-brown-dark">
-                  <span>Total Amount</span>
+                  <span>{t('cart.totalAmount')}</span>
                   <span className="text-gold">{total.toFixed(2)} DH</span>
                 </div>
               </div>
 
               {/* Payment method */}
               <div className="mb-6">
-                <label className="text-[0.7rem] font-bold text-text-mid uppercase tracking-wider block mb-3">Payment Method</label>
+                <label className="text-[0.7rem] font-bold text-text-mid uppercase tracking-wider block mb-3">{t('cart.paymentMethod')}</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { id: 'visa',   icon: 'fa-brands fa-cc-visa' },
@@ -365,12 +367,12 @@ const CartPage = () => {
                 className="w-full py-4 rounded-full bg-gold text-white font-bold text-[1rem] tracking-wider uppercase shadow-[0_6px_20px_rgba(200,146,42,0.4)] hover:bg-brown-dark hover:-translate-y-[2px] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
               >
                 {isPlacing
-                  ? <><i className="fas fa-spinner fa-spin mr-2"></i>Placing Order…</>
-                  : 'Complete Checkout'}
+                  ? <><i className="fas fa-spinner fa-spin mr-2"></i>{t('cart.placingOrder')}</>
+                  : t('cart.completeCheckout')}
               </button>
 
               <div className="text-center mt-4 text-[0.7rem] text-text-mid opacity-70 flex items-center justify-center gap-1.5">
-                <i className="fas fa-lock"></i> Secure encrypted transaction
+                <i className="fas fa-lock"></i> {t('cart.secureTransaction')}
               </div>
             </div>
           </div>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -17,7 +19,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: 'Enter a password to check strength', color: '' });
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: t('auth.strengthPlaceholder') || 'Enter a password to check strength', color: '' });
   const [isSuccess, setIsSuccess] = useState(false);
   const [shake, setShake] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,17 +63,17 @@ const RegisterPage = () => {
     if (/[^A-Za-z0-9]/.test(pw)) score++;
 
     const msgs = [
-      'Very Weak',
-      'Weak — add uppercase, numbers & symbols',
-      'Fair — getting better!',
-      'Good — almost there',
-      'Strong — great password ✓'
+      t('auth.strengthVeryWeak') || 'Very Weak',
+      t('auth.strengthWeak') || 'Weak — add uppercase, numbers & symbols',
+      t('auth.strengthFair') || 'Fair — getting better!',
+      t('auth.strengthGood') || 'Good — almost there',
+      t('auth.strengthStrong') || 'Strong — great password ✓'
     ];
     const colors = ['', '#e74c3c', '#e67e22', '#c8922a', '#27ae60'];
     
     setPasswordStrength({
       score,
-      label: pw ? msgs[score] : 'Enter a password to check strength',
+      label: pw ? msgs[score] : (t('auth.strengthPlaceholder') || 'Enter a password to check strength'),
       color: colors[score]
     });
   };
@@ -97,13 +99,13 @@ const RegisterPage = () => {
 
   const goStep2 = async () => {
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
-      toast.error('Please fill in all required fields.');
+      toast.error(t('errors.allFieldsRequired') || 'Please fill in all required fields.');
       triggerShake();
       return;
     }
 
     if (formData.name.length < 3) {
-      toast.error('Name must be at least 3 characters.');
+      toast.error(t('errors.nameMinLength') || 'Name must be at least 3 characters.');
       triggerShake();
       return;
     }
@@ -111,7 +113,7 @@ const RegisterPage = () => {
     // Phone number digit validation (digits:10)
     const normalizedPhone = formData.phone.replace(/\D/g, '');
     if (normalizedPhone.length !== 10) {
-      toast.error('Phone number must be exactly 10 digits.');
+      toast.error(t('errors.phoneInvalid') || 'Phone number must be exactly 10 digits.');
       triggerShake();
       return;
     }
@@ -139,19 +141,19 @@ const RegisterPage = () => {
   const submitForm = async () => {
     const otpString = formData.otp.join('');
     if (otpString.length < 6) {
-      toast.error('Please enter the full 6-digit OTP code.');
+      toast.error(t('errors.otpRequired') || 'Please enter the full 6-digit OTP code.');
       triggerShake();
       return;
     }
 
     if (!formData.password) {
-      toast.error('Please enter a password.');
+      toast.error(t('errors.passwordRequired') || 'Please enter a password.');
       triggerShake();
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match.');
+      toast.error(t('errors.passwordMismatch'));
       triggerShake();
       return;
     }
@@ -201,23 +203,21 @@ const RegisterPage = () => {
         <div className="absolute rounded-full bg-[radial-gradient(circle,rgba(200,146,42,0.25)_0%,transparent_70%)] z-1 w-[220px] h-[220px] top-[40%] -left-[60px]"></div>
         <div className="relative z-[2]">
           <span className="inline-block mb-[1.2rem] px-4 py-[0.3rem] rounded-[50px] border border-[rgba(200,146,42,0.5)] text-gold-light text-[0.75rem] tracking-[0.18em] uppercase">
-            ✦ Join Us · Morocco
+            {t('auth.joinUsTag')}
           </span>
           <h2 className="font-['Cormorant_Garamond'] text-[2.6rem] font-bold leading-[1.15] text-white mb-4">
-            Welcome to<br /><em className="text-gold-light italic not-italic">SahaServe</em>
+            {t('auth.culinaryJourney')}<br /><em className="text-gold-light italic not-italic">{t('auth.journeyTitle')}</em>
           </h2>
           <p className="text-[rgba(255,255,255,0.6)] text-[0.9rem] leading-[1.75] mb-8">
-            Create your account and unlock a world of authentic Moroccan
-            flavours, exclusive reservations, and personalised dining
-            experiences.
+            {t('auth.registerSub')}
           </p>
           <div className="flex flex-col gap-3">
             {[
-              { icon: "calendar-check", text: "Priority table reservations" },
-              { icon: "tag", text: "Exclusive member offers & discounts" },
-              { icon: "robot", text: "Access to our AI menu assistant" },
-              { icon: "star", text: "Earn loyalty points on every visit" },
-              { icon: "bell", text: "Early access to seasonal menus" }
+              { icon: "calendar-check", text: t('auth.perk1') || "Priority table reservations" },
+              { icon: "tag", text: t('auth.perk2') || "Exclusive member offers & discounts" },
+              { icon: "robot", text: t('auth.perk3') || "Access to our AI menu assistant" },
+              { icon: "star", text: t('auth.perk4') || "Earn loyalty points on every visit" },
+              { icon: "bell", text: t('auth.perk5') || "Early access to seasonal menus" }
             ].map((perk, i) => (
               <div key={i} className="flex items-center gap-3 text-[rgba(255,255,255,0.75)] text-[0.85rem]">
                 <i className={`fas fa-${perk.icon} text-gold w-4 text-[0.8rem]`}></i> {perk.text}
@@ -225,7 +225,7 @@ const RegisterPage = () => {
             ))}
           </div>
           <div className="mt-10 pt-6 border-t border-[rgba(255,255,255,0.1)] font-['Cormorant_Garamond'] italic text-[rgba(255,255,255,0.45)] text-[0.9rem] leading-[1.6]">
-            "Food is the ingredient that binds us together." — Moroccan Proverb
+            "{t('auth.proverb') || "Food is the ingredient that binds us together."}" — {t('auth.proverbOrigin') || "Moroccan Proverb"}
           </div>
         </div>
       </div>
@@ -241,50 +241,50 @@ const RegisterPage = () => {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[0.85rem] font-bold border-2 transition-all ${step > 1 ? 'bg-brown-dark border-brown-dark text-gold' : step === 1 ? 'bg-gold border-gold text-white shadow-[0_4px_16px_rgba(200,146,42,0.4)]' : 'border-beige bg-white text-text-mid'}`}>
                     {step > 1 ? <i className="fas fa-check text-[0.75rem]"></i> : '1'}
                   </div>
-                  <div className={`text-[0.72rem] font-medium tracking-[0.05em] uppercase transition-colors ${step === 1 ? 'text-gold' : step > 1 ? 'text-brown-dark' : 'text-text-mid'}`}>Your Info</div>
+                  <div className={`text-[0.72rem] font-medium tracking-[0.05em] uppercase transition-colors ${step === 1 ? 'text-gold' : step > 1 ? 'text-brown-dark' : 'text-text-mid'}`}>{t('auth.step1Label') || 'Your Info'}</div>
                 </div>
                 <div className={`flex-1 h-[2px] -mt-5 transition-colors ${step > 1 ? 'bg-gold' : 'bg-beige'}`}></div>
                 <div className={`flex flex-col items-center gap-[0.4rem] flex-1 ${step === 2 ? 'active' : ''}`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[0.85rem] font-bold border-2 transition-all ${step === 2 ? 'bg-gold border-gold text-white shadow-[0_4px_16px_rgba(200,146,42,0.4)]' : 'border-beige bg-white text-text-mid'}`}>
                     2
                   </div>
-                  <div className={`text-[0.72rem] font-medium tracking-[0.05em] uppercase transition-colors ${step === 2 ? 'text-gold' : 'text-text-mid'}`}>Verify & Secure</div>
+                  <div className={`text-[0.72rem] font-medium tracking-[0.05em] uppercase transition-colors ${step === 2 ? 'text-gold' : 'text-text-mid'}`}>{t('auth.step2Label') || 'Verify & Secure'}</div>
                 </div>
               </div>
 
               {step === 1 ? (
                 <div className="animate-[slideIn_0.4s_ease_both]">
                   <div className="mb-8">
-                    <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Step 1 of 2</span>
-                    <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark leading-[1.2] mb-1">Tell us about <em className="text-gold italic not-italic">yourself</em></h2>
+                    <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ {t('auth.stepCounter') || 'Step 1 of 2'}</span>
+                    <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark leading-[1.2] mb-1">{t('auth.aboutYouTitle1') || 'Tell us about'} <em className="text-gold italic not-italic">{t('auth.aboutYouTitle2') || 'yourself'}</em></h2>
                     <div className="w-9 h-[3px] bg-gold rounded-[2px] my-3"></div>
-                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">Fill in your details below. This takes less than a minute.</p>
+                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">{t('auth.step1Desc') || 'Fill in your details below. This takes less than a minute.'}</p>
                   </div>
 
                   <div className="flex flex-col gap-[1.1rem]">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Full Name <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('auth.fullName')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-user absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type="text" id="inp-name" value={formData.name} onChange={handleInputChange} placeholder="e.g. Youssef El Fassi" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Email Address <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('auth.emailAddress')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-envelope absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type="email" id="inp-email" value={formData.email} onChange={handleInputChange} placeholder="you@example.com" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Phone Number <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('contact.phoneLabel')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-phone absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type="tel" id="inp-phone" value={formData.phone} onChange={handleInputChange} placeholder="e.g. 0612345678" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Address <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('common.address')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-map-marker-alt absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type="text" id="inp-address" value={formData.address} onChange={handleInputChange} placeholder="Street, City, Morocco" className="w-full pl-11 pr-4 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
@@ -297,33 +297,33 @@ const RegisterPage = () => {
                       {isLoading ? (
                         <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
                       ) : (
-                        <>Continue <i className="fas fa-arrow-right text-[0.8rem]"></i></>
+                        <>{t('common.next')} <i className="fas fa-arrow-right text-[0.8rem]"></i></>
                       )}
                     </button>
                   </div>
 
                   <div className="text-center mt-7 text-[0.82rem] text-text-mid">
-                    Already have an account? <Link to="/login" className="text-gold font-medium hover:underline">Sign in</Link>
-                    <div className="mt-2 text-[0.75rem]">By continuing you agree to our <a href="#" className="text-gold hover:underline">Terms</a> & <a href="#" className="text-gold hover:underline">Privacy Policy</a></div>
+                    {t('auth.hasAccount')} <Link to="/login" className="text-gold font-medium hover:underline">{t('auth.signIn')}</Link>
+                    <div className="mt-2 text-[0.75rem]">{t('auth.agreeTermsPrefix') || 'By continuing you agree to our'} <a href="#" className="text-gold hover:underline">{t('auth.terms') || 'Terms'}</a> & <a href="#" className="text-gold hover:underline">{t('auth.privacy') || 'Privacy Policy'}</a></div>
                   </div>
                 </div>
               ) : (
                 <div className="animate-[slideIn_0.4s_ease_both]">
                   <div className="mb-8">
-                    <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ Step 2 of 2</span>
-                    <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark leading-[1.2] mb-1">Verify & <em className="text-gold italic not-italic">Secure</em></h2>
+                    <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">✦ {t('auth.stepCounter2') || 'Step 2 of 2'}</span>
+                    <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark leading-[1.2] mb-1">{t('auth.verifyTitle1') || 'Verify &'} <em className="text-gold italic not-italic">{t('auth.verifyTitle2') || 'Secure'}</em></h2>
                     <div className="w-9 h-[3px] bg-gold rounded-[2px] my-3"></div>
-                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">Enter the OTP sent to your email and set a strong password.</p>
+                    <p className="text-[0.87rem] text-text-mid leading-[1.6]">{t('auth.verifyDesc') || 'Enter the OTP sent to your email and set a strong password.'}</p>
                   </div>
 
                   <div className="flex flex-col gap-[1.1rem]">
                     <div className="bg-gold-pale border border-[rgba(200,146,42,0.3)] rounded-xl p-3 flex items-start gap-[0.65rem] mb-2">
                       <i className="fas fa-shield-alt text-gold text-[0.85rem] mt-[0.1rem]"></i>
-                      <p className="text-[0.8rem] text-brown-mid leading-[1.55]">A 6-digit code has been sent to <strong className="text-brown-dark">{formData.email}</strong>. Please enter it below to verify your identity.</p>
+                      <p className="text-[0.8rem] text-brown-mid leading-[1.55]">{t('auth.otpSentTo') || 'A 6-digit code has been sent to'} <strong className="text-brown-dark">{formData.email}</strong>. {t('auth.otpEnterCode') || 'Please enter it below to verify your identity.'}</p>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide uppercase text-center block mb-2 opacity-60">One-Time Password (OTP) <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide uppercase text-center block mb-2 opacity-60">{t('auth.otpLabel') || 'One-Time Password (OTP)'} <span className="text-gold">*</span></label>
                       <div className="flex justify-center gap-[0.6rem]">
                         {formData.otp.map((digit, i) => (
                           <input
@@ -340,12 +340,12 @@ const RegisterPage = () => {
                         ))}
                       </div>
                       <div className="text-center text-[0.78rem] text-text-mid mt-2">
-                        Didn't receive it? <span className="text-gold font-medium underline cursor-pointer" onClick={resendOTP}>Resend OTP</span> {countdown > 0 ? `(${countdown}s)` : ''}
+                        {t('auth.noOtp') || "Didn't receive it?"} <span className="text-gold font-medium underline cursor-pointer" onClick={resendOTP}>{t('auth.resendOtp') || 'Resend OTP'}</span> {countdown > 0 ? `(${countdown}s)` : ''}
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1 mt-2">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Password <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('auth.password')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-lock absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type={showPassword ? "text" : "password"} id="inp-pw" value={formData.password} onChange={handleInputChange} placeholder="Min. 6 characters" className="w-full pl-11 pr-11 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
@@ -362,7 +362,7 @@ const RegisterPage = () => {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">Confirm Password <span className="text-gold">*</span></label>
+                      <label className="text-[0.8rem] font-medium text-brown-mid tracking-wide">{t('auth.confirmPassword')} <span className="text-gold">*</span></label>
                       <div className="relative flex items-center">
                         <i className="fas fa-lock absolute left-4 text-gold text-[0.85rem]"></i>
                         <input type={showConfirmPassword ? "text" : "password"} id="inp-pw2" value={formData.confirmPassword} onChange={handleInputChange} placeholder="Repeat your password" className="w-full pl-11 pr-11 py-3 border-[1.5px] border-beige rounded-xl outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.12)] transition-all" />
@@ -372,7 +372,7 @@ const RegisterPage = () => {
                       </div>
                       {formData.confirmPassword && (
                         <div className={`text-[0.75rem] mt-1 ${formData.password === formData.confirmPassword ? 'text-[#27ae60]' : 'text-[#e74c3c]'}`}>
-                          {formData.password === formData.confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                          {formData.password === formData.confirmPassword ? `✓ ${t('auth.pwMatch') || 'Passwords match'}` : `✗ ${t('auth.pwNoMatch') || 'Passwords do not match'}`}
                         </div>
                       )}
                     </div>
@@ -383,11 +383,11 @@ const RegisterPage = () => {
                       {isLoading ? (
                         <div className="w-[18px] h-[18px] rounded-full border-2 border-[rgba(255,255,255,0.3)] border-t-white animate-spin"></div>
                       ) : (
-                        <><i className="fas fa-check-circle text-[0.9rem]"></i> Create My Account</>
+                        <><i className="fas fa-check-circle text-[0.9rem]"></i> {t('auth.createAccount')}</>
                       )}
                     </button>
                     <button type="button" className="w-full py-[0.95rem] px-6 rounded-[50px] bg-transparent border-[1.5px] border-beige text-text-mid text-[0.95rem] font-semibold hover:border-gold hover:text-gold hover:bg-gold-pale transition-all flex items-center justify-center gap-2" onClick={() => setStep(1)}>
-                      <i className="fas fa-arrow-left text-[0.8rem]"></i> Back to Step 1
+                      <i className="fas fa-arrow-left text-[0.8rem]"></i> {t('auth.backStep1') || 'Back to Step 1'}
                     </button>
                   </div>
                 </div>
@@ -398,13 +398,13 @@ const RegisterPage = () => {
               <div className="w-20 h-20 rounded-full bg-[linear-gradient(135deg,#c8922a,#a0721e)] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(200,146,42,0.4)] animate-[popIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_both]">
                 <i className="fas fa-check text-2xl text-white"></i>
               </div>
-              <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark mb-2">Welcome aboard!</h2>
+              <h2 className="font-['Cormorant_Garamond'] text-[2rem] font-bold text-brown-dark mb-2">{t('auth.accountCreated')}</h2>
               <p className="text-[0.9rem] text-text-mid leading-[1.65] max-w-[320px]">
-                Your SahaServe account has been created. Get ready for an authentic Moroccan dining experience.
+                {t('auth.successRegister')}
               </p>
               <div className="mt-8 w-full max-w-[280px]">
                 <Link to="/" className="w-full py-[0.95rem] px-6 rounded-[50px] bg-gold text-white text-[0.95rem] font-semibold shadow-[0_6px_22px_rgba(200,146,42,0.4)] hover:bg-brown hover:-translate-y-[2px] transition-all flex items-center justify-center gap-2 no-underline">
-                  <i className="fas fa-utensils text-[0.85rem]"></i> Explore the Menu
+                  <i className="fas fa-utensils text-[0.85rem]"></i> {t('home.viewMenu')}
                 </Link>
               </div>
             </div>
