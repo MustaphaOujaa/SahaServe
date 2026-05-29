@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Margherita Pizza",
+    "price": 45,
+    "tags": ["vegetarian", "cheese"],
+    "description": "Classic pizza with mozzarella cheese and tomato sauce"
+  },
+  {
+    "id": 2,
+    "name": "Spicy Chicken Burger",
+    "price": 55,
+    "tags": ["spicy", "chicken"],
+    "description": "Grilled chicken burger with spicy sauce"
+  },
+  {
+    "id": 3,
+    "name": "Caesar Salad",
+    "price": 35,
+    "tags": ["healthy", "salad"],
+    "description": "Fresh salad with chicken and parmesan"
+  }
+]
