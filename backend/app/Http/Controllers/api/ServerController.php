@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
 use Illuminate\Http\Request;
+use App\Events\OrderStatusUpdated;
 
 class ServerController extends Controller
 {
@@ -14,7 +15,7 @@ class ServerController extends Controller
     public function activeOrders(Request $request)
     {
         $user = $request->user();
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('server')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('server', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('server') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -33,7 +34,7 @@ class ServerController extends Controller
     public function historyOrders(Request $request)
     {
         $user = $request->user();
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('server')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('server', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('server') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -52,7 +53,7 @@ class ServerController extends Controller
     public function markDelivered(Request $request, $id)
     {
         $user = $request->user();
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('server')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('server', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('server') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -62,6 +63,10 @@ class ServerController extends Controller
         }
 
         $order->update(['status' => 'delivered']);
+        
+        $order->loadMissing(['user', 'items.dish', 'table']);
+        broadcast(new OrderStatusUpdated($order));
+
         return response()->json(['success' => true, 'data' => $order]);
     }
 
@@ -71,7 +76,7 @@ class ServerController extends Controller
     public function toggleTableAvailability(Request $request, $id)
     {
         $user = $request->user();
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('server')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('server', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('server') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 

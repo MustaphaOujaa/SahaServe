@@ -22,6 +22,7 @@ const listenForOrderUpdates = async ({
   updateCachedData,
   shouldAcceptOrder = () => true,
   allowInsert = true,
+  removeWhen = null, // optional: (order) => bool — remove from cache when true
 }) => {
   let channel;
   let handleOrder;
@@ -32,13 +33,30 @@ const listenForOrderUpdates = async ({
     channel = echo.channel('orders');
 
     handleOrder = (event) => {
+      console.log("[WebSocket Event Received] Raw event:", event);
       const incomingOrder = event.order;
-
-      if (!incomingOrder || !shouldAcceptOrder(incomingOrder)) {
+      if (!incomingOrder) {
+        console.warn("[WebSocket] No order found in event payload.");
         return;
       }
 
+      console.log(`[WebSocket] Processing order #${incomingOrder.id} with status "${incomingOrder.status}" (type: ${incomingOrder.order_type})`);
+
       updateCachedData((draft) => {
+        // If the order meets the removal condition, remove it from cache
+        if (removeWhen && removeWhen(incomingOrder)) {
+          console.log(`[WebSocket] Removing order #${incomingOrder.id} from cache (matched removeWhen)`);
+          const idx = draft.findIndex((o) => o.id === incomingOrder.id);
+          if (idx !== -1) draft.splice(idx, 1);
+          return;
+        }
+
+        if (!shouldAcceptOrder(incomingOrder)) {
+          console.log(`[WebSocket] Order #${incomingOrder.id} ignored (failed shouldAcceptOrder filter)`);
+          return;
+        }
+
+        console.log(`[WebSocket] Upserting order #${incomingOrder.id} in cache`);
         upsertOrder(draft, incomingOrder, allowInsert);
       });
     };
@@ -155,13 +173,32 @@ export const apiSlice = createApi({
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
       async onCacheEntryAdded(_arg, lifecycleApi) {
-        await listenForOrderUpdates(lifecycleApi);
+        await listenForOrderUpdates({
+          ...lifecycleApi,
+          // Insert if it's an active on_site order
+          shouldAcceptOrder: (order) =>
+            order.order_type === 'on_site' &&
+            !['delivered', 'cancelled'].includes(order.status),
+          allowInsert: true,
+          // Remove from active list once it becomes delivered or cancelled
+          removeWhen: (order) => ['delivered', 'cancelled'].includes(order.status),
+        });
       },
     }),
     getServerHistoryOrders: builder.query({
       query: () => '/server/orders/history',
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
+      async onCacheEntryAdded(_arg, lifecycleApi) {
+        // Push orders into history in real-time when they become delivered/cancelled
+        await listenForOrderUpdates({
+          ...lifecycleApi,
+          shouldAcceptOrder: (order) =>
+            order.order_type === 'on_site' &&
+            ['delivered', 'cancelled'].includes(order.status),
+          allowInsert: true,
+        });
+      },
     }),
     markOrderDeliveredServer: builder.mutation({
       query: (orderId) => ({

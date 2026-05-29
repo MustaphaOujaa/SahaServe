@@ -69,9 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/items/{id}', [CartController::class, 'destroy']);
     Route::delete('/cart', [CartController::class, 'clear']);
 
-    //orders
-        Route::get('/delivery/current', [DeliveryController::class, 'current']);
-        Route::get('/delivery/history', [DeliveryController::class, 'history']);
+    //orders — client
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/my-orders', [OrderController::class, 'userOrders']);
+
+    //delivery worker
+    Route::get('/delivery/current', [DeliveryController::class, 'current']);
+    Route::get('/delivery/history', [DeliveryController::class, 'history']);
 
     //reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
