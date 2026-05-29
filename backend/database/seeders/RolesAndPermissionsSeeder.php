@@ -58,7 +58,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $server->givePermissionTo([
             'manage-orders',
-            'manage-tags'
+            'manage-tags',
+            'manage-tables',
+            'mark-delivered'
         ]);
 
         $chef->givePermissionTo([

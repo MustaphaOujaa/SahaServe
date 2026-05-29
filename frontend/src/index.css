@@ -310,6 +310,15 @@ body {
   color: white;
 }
 
+.lang-flag {
+  width: 1.35rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(26, 15, 0, 0.12);
+}
+
 .lang-dropdown {
   position: absolute;
   top: 100%;

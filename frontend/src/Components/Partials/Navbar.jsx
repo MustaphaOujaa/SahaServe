@@ -6,6 +6,16 @@ import { ButtonSpinner } from '../UI/Loading';
 import { useGetFavoritesQuery, useGetCartQuery } from '../../redux/api/apiSlice';
 import { changeLanguage, languages } from '../../i18n';
 
+const FlagIcon = ({ language, className = '' }) => (
+  <img
+    src={`https://flagcdn.com/w40/${language.flagCode}.png`}
+    srcSet={`https://flagcdn.com/w40/${language.flagCode}.png 1x, https://flagcdn.com/w80/${language.flagCode}.png 2x`}
+    alt={`${language.name} flag`}
+    className={`lang-flag ${className}`}
+    loading="lazy"
+  />
+);
+
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -123,8 +133,7 @@ const Navbar = () => {
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
                 className="lang-switcher-btn"
               >
-                <span>{currentLang.flag}</span>
-                <span className="hidden sm:inline">{currentLang.code.toUpperCase()}</span>
+                <FlagIcon language={currentLang} />
                 <i className="fas fa-chevron-down text-[0.6rem]"></i>
               </button>
               {langDropdownOpen && (
@@ -135,7 +144,7 @@ const Navbar = () => {
                       onClick={() => handleLanguageChange(lang.code)}
                       className={`lang-option ${i18n.language === lang.code ? 'active' : ''}`}
                     >
-                      <span>{lang.flag}</span>
+                      <FlagIcon language={lang} />
                       <span>{lang.nativeName}</span>
                     </button>
                   ))}
@@ -215,13 +224,14 @@ const Navbar = () => {
               <button
                 key={lang.code}
                 onClick={() => handleLanguageChange(lang.code)}
-                className={`px-3 py-1.5 rounded-full text-[0.75rem] font-semibold transition-all ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold transition-all ${
                   i18n.language === lang.code
                     ? 'bg-gold text-white'
                     : 'bg-gold-pale text-gold hover:bg-gold hover:text-white'
                 }`}
               >
-                {lang.flag} {lang.nativeName}
+                <FlagIcon language={lang} />
+                <span>{lang.nativeName}</span>
               </button>
             ))}
           </div>

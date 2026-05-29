@@ -37,9 +37,9 @@ export const changeLanguage = (lng) => {
 export const getCurrentLanguage = () => i18n.language;
 
 export const languages = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇲🇦' },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'en', name: 'English', nativeName: 'English', flagCode: 'gb' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flagCode: 'ma' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flagCode: 'fr' },
 ];
 
 export default i18n;
