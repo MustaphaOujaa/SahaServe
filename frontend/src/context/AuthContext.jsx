@@ -98,6 +98,7 @@ export const AuthProvider = ({ children }) => {
 
   const isChef = () => isAdmin() ? false : hasRole('chef');
   const isDeliverer = () => isAdmin() ? false : hasRole('delivery');
+  const isServer = () => isAdmin() ? false : hasRole('server');
 
   // Login with token (useful for OAuth callbacks like Google)
   const loginWithToken = async (authToken) => {
@@ -277,6 +278,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isChef,
         isDeliverer,
+        isServer,
       }}
     >
       {children}

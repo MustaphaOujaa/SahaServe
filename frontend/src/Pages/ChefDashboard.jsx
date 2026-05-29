@@ -55,7 +55,7 @@ export default function ChefDashboard() {
   };
 
   const activeOrders = useMemo(() => {
-    return allOrders.filter((o) => o.status === "confirmed" || o.status === "preparing");
+    return allOrders.filter((o) => o.status === "pending" || o.status === "confirmed" || o.status === "preparing");
   }, [allOrders]);
 
   const historyOrders = useMemo(() => {
@@ -169,7 +169,16 @@ export default function ChefDashboard() {
                     </div>
 
                     <div className="border-t border-beige/70 bg-white p-4">
-                      {order.status === "confirmed" ? (
+                      {order.status === "pending" && (
+                        <button
+                          disabled={isUpdating}
+                          onClick={() => handleUpdateStatus(order.id, "confirmed")}
+                          className="w-full rounded-lg bg-emerald-600 py-2.5 text-[0.85rem] font-bold text-white transition-colors hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+                        >
+                          <i className="fas fa-check-circle mr-2"></i>Confirm Order
+                        </button>
+                      )}
+                      {order.status === "confirmed" && (
                         <button
                           disabled={isUpdating}
                           onClick={() => handleUpdateStatus(order.id, "preparing")}
@@ -177,7 +186,8 @@ export default function ChefDashboard() {
                         >
                           <i className="fas fa-fire mr-2"></i>Start Preparing
                         </button>
-                      ) : (
+                      )}
+                      {order.status === "preparing" && (
                         <button
                           disabled={isUpdating}
                           onClick={() => handleUpdateStatus(order.id, "prepared")}

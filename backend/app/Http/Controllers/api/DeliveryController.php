@@ -14,7 +14,7 @@ class DeliveryController extends Controller
     {
         $user = $request->user();
         // Ensure the user is a delivery worker
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('delivery')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('delivery', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('delivery') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
         $orders = Order::where('delivery_worker_id', $user->id)
@@ -30,7 +30,7 @@ class DeliveryController extends Controller
     public function history(Request $request)
     {
         $user = $request->user();
-        if (!method_exists($user, 'hasRole') || !$user->hasRole('delivery')) {
+        if (!method_exists($user, 'hasRole') || (!$user->hasRole('delivery', 'sanctum') && !$user->hasRole('admin', 'sanctum') && !$user->hasRole('delivery') && !$user->hasRole('admin'))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
         $orders = Order::where('delivery_worker_id', $user->id)

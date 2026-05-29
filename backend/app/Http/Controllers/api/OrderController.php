@@ -105,7 +105,7 @@ class OrderController extends Controller
             DB::commit();
 
             $order->load('user', 'items.dish', 'table');
-            broadcast(new OrderPlaced($order))->toOthers();
+            broadcast(new OrderPlaced($order));
 
             return response()->json(['success' => true, 'data' => $order], 201);
         } catch (\Exception $e) {
@@ -126,7 +126,7 @@ class OrderController extends Controller
 
         $order->update(['status' => $validated['status']]);
         $order->load('user', 'items.dish', 'table');
-        broadcast(new OrderStatusUpdated($order))->toOthers();
+        broadcast(new OrderStatusUpdated($order));
 
         return response()->json(['success' => true, 'data' => $order]);
     }
@@ -139,7 +139,7 @@ class OrderController extends Controller
 
         $order->update(['status' => 'confirmed']);
         $order->load('user', 'items.dish', 'table');
-        broadcast(new OrderStatusUpdated($order))->toOthers();
+        broadcast(new OrderStatusUpdated($order));
 
         return response()->json(['success' => true, 'data' => $order]);
     }
@@ -152,7 +152,7 @@ class OrderController extends Controller
 
         $order->update(['status' => 'preparing']);
         $order->load('user', 'items.dish', 'table');
-        broadcast(new OrderStatusUpdated($order))->toOthers();
+        broadcast(new OrderStatusUpdated($order));
 
         return response()->json(['success' => true, 'data' => $order]);
     }
@@ -165,7 +165,7 @@ class OrderController extends Controller
 
         $order->update(['status' => 'delivered']);
         $order->load('user', 'items.dish', 'table');
-        broadcast(new OrderStatusUpdated($order))->toOthers();
+        broadcast(new OrderStatusUpdated($order));
 
         return response()->json(['success' => true, 'data' => $order]);
     }

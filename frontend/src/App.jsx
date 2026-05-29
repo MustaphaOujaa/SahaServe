@@ -5,14 +5,15 @@ import HomePage from "./Pages/HomePage";
 import RegisterPage from "./Pages/RegisterPage";
 import LoginPage from "./Pages/LoginPage";
 import Soa from "./Components/Soa";
-import MenuPage from "./pages/MenuPage";
-import FavouritesPage from "./pages/FavouritesPage";
-import CartPage from "./pages/CartPage";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
-import ProfilePage from "./pages/ProfilePage";
+import MenuPage from "./Pages/MenuPage";
+import FavouritesPage from "./Pages/FavouritesPage";
+import CartPage from "./Pages/CartPage";
+import AboutPage from "./Pages/AboutPage";
+import ContactPage from "./Pages/ContactPage";
+import ProfilePage from "./Pages/ProfilePage";
 import ChefDashboard from "./Pages/ChefDashboard";
 import DeliveryDashboard from "./Pages/DeliveryDashboard";
+import ServerDashboard from "./Pages/ServerDashboard";
 import ShowDishPage from "./Pages/ShowDishPage";
 import ReservationPage from "./Pages/ReservationPage";
 
@@ -90,11 +91,29 @@ const RequireChef = ({ children }) => {
   return children;
 };
 
-const ClientOnly = ({ children }) => {
-  const { user, loading, isAdmin, isChef, isDeliverer } = useAuth();
+const RequireServer = ({ children }) => {
+  const { user, loading, isServer } = useAuth();
 
-  // Hide for admin, chef, or delivery workers
-  if (loading || !user || isAdmin() || isChef() || isDeliverer()) {
+  if (loading) {
+    return <PageLoader label="Loading dashboard..." />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isServer()) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+const ClientOnly = ({ children }) => {
+  const { user, loading, isAdmin, isChef, isDeliverer, isServer } = useAuth();
+
+  // Hide for admin, chef, delivery workers, or servers
+  if (loading || !user || isAdmin() || isChef() || isDeliverer() || isServer()) {
     return null;
   }
 
@@ -141,6 +160,7 @@ function App() {
               <Route path="/profile" element={<ProfileOrDashboard />} />
               <Route path="/chef-dashboard" element={<RequireChef><ChefDashboard /></RequireChef>} />
               <Route path="/delivery-dashboard" element={<RequireDeliveryWorker><DeliveryDashboard /></RequireDeliveryWorker>} />
+              <Route path="/server-dashboard" element={<RequireServer><ServerDashboard /></RequireServer>} />
               <Route path="/admin-dashboard" element={<RequireAdmin><DashboardPage /></RequireAdmin>} />
             </Routes>
           </div>
