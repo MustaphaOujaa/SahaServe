@@ -7,6 +7,9 @@ import {
   useGetTablesQuery,
   useMarkOrderDeliveredServerMutation,
   useToggleTableAvailabilityServerMutation,
+  useUpdateOrderStatusMutation,
+  useGetDeliveryWorkersQuery,
+  useAssignDeliveryWorkerMutation,
 } from "../redux/api/apiSlice";
 import { PageLoader } from "../Components/UI/Loading";
 
@@ -69,9 +72,37 @@ export default function ServerDashboard() {
   const { data: activeOrders = [], isLoading: isLoadingActive } = useGetServerActiveOrdersQuery();
   const { data: historyOrders = [], isLoading: isLoadingHistory } = useGetServerHistoryOrdersQuery();
   const { data: tables = [], isLoading: isLoadingTables } = useGetTablesQuery();
+  const { data: deliveryWorkers = [] } = useGetDeliveryWorkersQuery();
 
   const [markDelivered, { isLoading: isMarking }] = useMarkOrderDeliveredServerMutation();
   const [toggleTable, { isLoading: isToggling }] = useToggleTableAvailabilityServerMutation();
+  const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+  const [assignDeliveryWorker, { isLoading: isAssigning }] = useAssignDeliveryWorkerMutation();
+
+  const [selectedWorkers, setSelectedWorkers] = useState({});
+
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      await updateOrderStatus({ orderId, status: "confirmed" }).unwrap();
+      toast.success(t('orders.statusUpdated') || `Order #${orderId} confirmed.`);
+    } catch (error) {
+      toast.error(error?.data?.message || t('errors.serverError'));
+    }
+  };
+
+  const handleAssignDelivery = async (orderId) => {
+    const deliveryWorkerId = selectedWorkers[orderId];
+    if (!deliveryWorkerId) {
+      toast.error("Please select a delivery worker first.");
+      return;
+    }
+    try {
+      await assignDeliveryWorker({ orderId, deliveryWorkerId }).unwrap();
+      toast.success("Delivery worker assigned successfully.");
+    } catch (error) {
+      toast.error(error?.data?.message || t('errors.serverError'));
+    }
+  };
 
   const handleMarkServed = async (orderId) => {
     try {
@@ -196,13 +227,26 @@ export default function ServerDashboard() {
                         <StatusBadge value={order.status} t={t} />
                       </div>
 
-                      <div className="px-5 py-3 text-[0.86rem] font-semibold text-brown-mid border-b border-beige/60 bg-white/40 flex items-center gap-2">
-                        <i className="fas fa-chair text-gold"></i>
-                        <span>{t('orders.table')} {order.table?.number || order.table_id || t('common.N/A')}</span>
-                        <span className="text-[0.75rem] font-normal text-text-mid">
-                          ({order.table?.capacity || 4} {t('reservations.seats')})
-                        </span>
-                      </div>
+                      {order.order_type === "on_site" ? (
+                        <div className="px-5 py-3 text-[0.86rem] font-semibold text-brown-mid border-b border-beige/60 bg-white/40 flex items-center gap-2">
+                          <i className="fas fa-chair text-gold"></i>
+                          <span>{t('orders.table')} {order.table?.number || order.table_id || t('common.N/A')}</span>
+                          <span className="text-[0.75rem] font-normal text-text-mid">
+                            ({order.table?.capacity || 4} {t('reservations.seats')})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="px-5 py-3 text-[0.86rem] font-semibold text-brown-mid border-b border-beige/60 bg-white/40 flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-motorcycle text-gold"></i>
+                            <span className="font-bold text-brown-dark">{t('orders.delivery') || 'Delivery'}</span>
+                          </div>
+                          <span className="text-[0.78rem] text-text-mid font-medium truncate">
+                            <i className="fas fa-map-marker-alt text-gold mr-1.5"></i>
+                            {order.delivery_address || t('common.N/A')}
+                          </span>
+                        </div>
+                      )}
 
                       <div className="flex-1 p-5 bg-white/20">
                         <span className="text-[0.7rem] font-bold uppercase tracking-wider text-text-mid block mb-3">
@@ -231,21 +275,76 @@ export default function ServerDashboard() {
                       </div>
 
                       <div className="border-t border-beige/70 bg-white/40 p-4">
-                        {isReady ? (
+                        {order.status === "pending" ? (
                           <button
-                            disabled={isMarking}
-                            onClick={() => handleMarkServed(order.id)}
-                            className="w-full rounded-full bg-gold py-2.5 text-[0.82rem] font-bold text-white transition-all duration-200 hover:bg-brown shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                            disabled={isUpdating}
+                            onClick={() => handleConfirmOrder(order.id)}
+                            className="w-full rounded-full bg-emerald-600 py-2.5 text-[0.82rem] font-bold text-white transition-all duration-200 hover:bg-emerald-700 shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                           >
-                            <i className="fas fa-concierge-bell text-[0.85rem] animate-[bobble_1s_infinite]"></i>
-                            <span>{t('orders.markServed')}</span>
+                            <i className="fas fa-check-circle"></i>
+                            <span>{t('orders.confirmOrder') || 'Confirm Order'}</span>
                           </button>
-                        ) : (
+                        ) : order.status === "confirmed" ? (
+                          <div className="w-full text-center py-2.5 text-[0.82rem] font-semibold text-text-mid bg-gray-50/70 border border-gray-100 rounded-full flex items-center justify-center gap-2">
+                            <i className="fas fa-check-circle text-emerald-600 mr-1"></i>
+                            <span>{t('orders.confirmed') || 'Confirmed'}</span>
+                          </div>
+                        ) : order.status === "preparing" ? (
                           <div className="w-full text-center py-2.5 text-[0.82rem] font-semibold text-text-mid bg-gray-50/70 border border-gray-100 rounded-full flex items-center justify-center gap-2">
                             <i className="fas fa-spinner fa-spin text-gold/80"></i>
                             <span>{t('orders.preparingInKitchen')}</span>
                           </div>
-                        )}
+                        ) : isReady ? (
+                          order.order_type === "on_site" ? (
+                            <button
+                              disabled={isMarking}
+                              onClick={() => handleMarkServed(order.id)}
+                              className="w-full rounded-full bg-gold py-2.5 text-[0.82rem] font-bold text-white transition-all duration-200 hover:bg-brown shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                            >
+                              <i className="fas fa-concierge-bell text-[0.85rem] animate-[bobble_1s_infinite]"></i>
+                              <span>{t('orders.markServed')}</span>
+                            </button>
+                          ) : order.delivery_worker_id ? (
+                            <div className={`w-full text-center py-2.5 text-[0.82rem] font-semibold rounded-[14px] flex flex-col items-center justify-center gap-0.5 ${
+                              order.delivery_status === 'accepted'
+                                ? "text-[#1e3a8a] bg-[#eff6ff] border border-[#bfdbfe]"
+                                : "text-[#287a3e] bg-[#edf8ef] border border-[#bee2c8]"
+                            }`}>
+                              <div className="flex items-center gap-1.5">
+                                <i className={`fas ${order.delivery_status === 'accepted' ? 'fa-shipping-fast' : 'fa-truck'}`}></i>
+                                <span>
+                                  {order.delivery_status === 'accepted' ? 'On Mission: ' : 'Assigned to '}
+                                  {order.delivery_worker?.name || `Worker #${order.delivery_worker_id}`}
+                                </span>
+                              </div>
+                              <span className="text-[0.68rem] text-text-mid">
+                                {order.delivery_status === 'accepted' ? 'Order accepted & delivering' : 'Waiting for acceptance'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex gap-2">
+                                <select
+                                  value={selectedWorkers[order.id] || ""}
+                                  onChange={(e) => setSelectedWorkers(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                  className="flex-1 px-3 py-2 rounded-full border border-beige bg-cream text-[0.8rem] outline-none focus:border-gold transition-all"
+                                >
+                                  <option value="">Select Delivery Worker</option>
+                                  {deliveryWorkers.map(w => (
+                                    <option key={w.id} value={w.id}>{w.name} ({w.phone_number || 'N/A'})</option>
+                                  ))}
+                                </select>
+                                <button
+                                  disabled={isAssigning || !selectedWorkers[order.id]}
+                                  onClick={() => handleAssignDelivery(order.id)}
+                                  className="px-4 py-2 rounded-full bg-gold text-white text-[0.8rem] font-bold hover:bg-brown transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                  Assign
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        ) : null}
                       </div>
                     </AdminCard>
                   );

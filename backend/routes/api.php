@@ -76,6 +76,11 @@ Route::middleware('auth:sanctum')->group(function () {
     //delivery worker
     Route::get('/delivery/current', [DeliveryController::class, 'current']);
     Route::get('/delivery/history', [DeliveryController::class, 'history']);
+    Route::post('/delivery/check-in', [DeliveryController::class, 'checkIn']);
+    Route::post('/delivery/check-out', [DeliveryController::class, 'checkOut']);
+    Route::patch('/delivery/orders/{id}/accept', [DeliveryController::class, 'acceptOrder']);
+    Route::patch('/delivery/orders/{id}/refuse', [DeliveryController::class, 'refuseOrder']);
+    Route::patch('/delivery/orders/{id}/delivered', [DeliveryController::class, 'markDelivered']);
 
     //reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
@@ -149,6 +154,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/server/orders/history', [ServerController::class, 'historyOrders']);
         Route::patch('/server/orders/{id}/delivered', [ServerController::class, 'markDelivered']);
         Route::patch('/server/tables/{id}/availability', [ServerController::class, 'toggleTableAvailability']);
+        Route::get('/server/delivery-workers', [ServerController::class, 'getDeliveryWorkers']);
+        Route::patch('/server/orders/{id}/assign-delivery', [ServerController::class, 'assignDeliveryWorker']);
     });
 
     //----RESERVATIONS----

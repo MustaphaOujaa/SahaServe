@@ -65,7 +65,7 @@ export default function ChefDashboard() {
   };
 
   const activeOrders = useMemo(() => {
-    return allOrders.filter((o) => o.status === "pending" || o.status === "confirmed" || o.status === "preparing");
+    return allOrders.filter((o) => o.status === "confirmed" || o.status === "preparing");
   }, [allOrders]);
 
   const historyOrders = useMemo(() => {
