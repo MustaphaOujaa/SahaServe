@@ -417,7 +417,8 @@ class AuthController extends Controller
             'adress',
             'phone_number',
             'image',
-            'avatar'
+            'avatar',
+            'delivery_status'
         )
             ->with('roles:id,name')
             ->where('id', $user->id)->first();

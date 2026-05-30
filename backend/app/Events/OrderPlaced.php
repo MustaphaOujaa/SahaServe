@@ -26,10 +26,11 @@ class OrderPlaced implements ShouldBroadcastNow
         return 'order.placed';
     }
 
+
     public function broadcastWith(): array
     {
         return [
-            'order' => $this->order->loadMissing(['user', 'items.dish', 'table'])->toArray(),
+            'order' => $this->order->loadMissing(['user', 'items.dish', 'table', 'deliveryWorker'])->toArray(),
         ];
     }
 }

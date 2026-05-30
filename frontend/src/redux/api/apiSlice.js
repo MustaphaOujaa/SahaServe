@@ -175,12 +175,9 @@ export const apiSlice = createApi({
       async onCacheEntryAdded(_arg, lifecycleApi) {
         await listenForOrderUpdates({
           ...lifecycleApi,
-          // Insert if it's an active on_site order
           shouldAcceptOrder: (order) =>
-            order.order_type === 'on_site' &&
             !['delivered', 'cancelled'].includes(order.status),
           allowInsert: true,
-          // Remove from active list once it becomes delivered or cancelled
           removeWhen: (order) => ['delivered', 'cancelled'].includes(order.status),
         });
       },
@@ -190,15 +187,71 @@ export const apiSlice = createApi({
       providesTags: ['Orders'],
       transformResponse: (response) => response.data,
       async onCacheEntryAdded(_arg, lifecycleApi) {
-        // Push orders into history in real-time when they become delivered/cancelled
         await listenForOrderUpdates({
           ...lifecycleApi,
           shouldAcceptOrder: (order) =>
-            order.order_type === 'on_site' &&
             ['delivered', 'cancelled'].includes(order.status),
           allowInsert: true,
         });
       },
+    }),
+    getDeliveryWorkers: builder.query({
+      query: () => '/server/delivery-workers',
+      providesTags: ['Users'],
+      transformResponse: (response) => response.data,
+      async onCacheEntryAdded(_arg, { cacheDataLoaded, cacheEntryRemoved, updateCachedData }) {
+        let channel;
+        let handleWorkerStatus;
+        try {
+          await cacheDataLoaded;
+          const echo = getEcho();
+          channel = echo.channel('orders');
+
+          handleWorkerStatus = (event) => {
+            console.log('[WebSocket] delivery.status.updated:', event);
+            const worker = event.worker;
+            if (!worker) return;
+
+            updateCachedData((draft) => {
+              const existingIndex = draft.findIndex((w) => w.id === worker.id);
+
+              if (worker.delivery_status === 'available') {
+                // Add worker to list if not already there
+                if (existingIndex === -1) {
+                  draft.push({
+                    id: worker.id,
+                    name: worker.name,
+                    phone_number: worker.phone_number,
+                  });
+                }
+              } else {
+                // Remove worker from list (offline or busy)
+                if (existingIndex !== -1) {
+                  draft.splice(existingIndex, 1);
+                }
+              }
+            });
+          };
+
+          channel.listen('.delivery.status.updated', handleWorkerStatus);
+        } catch {
+          // silently fail if echo is unavailable
+        }
+
+        await cacheEntryRemoved;
+
+        if (channel && handleWorkerStatus) {
+          channel.stopListening('.delivery.status.updated', handleWorkerStatus);
+        }
+      },
+    }),
+    assignDeliveryWorker: builder.mutation({
+      query: ({ orderId, deliveryWorkerId }) => ({
+        url: `/server/orders/${orderId}/assign-delivery`,
+        method: 'PATCH',
+        body: { delivery_worker_id: deliveryWorkerId },
+      }),
+      invalidatesTags: ['Orders'],
     }),
     markOrderDeliveredServer: builder.mutation({
       query: (orderId) => ({
@@ -214,6 +267,41 @@ export const apiSlice = createApi({
         body: { is_available: isAvailable },
       }),
       invalidatesTags: ['Tables'],
+    }),
+    checkInDelivery: builder.mutation({
+      query: () => ({
+        url: '/delivery/check-in',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Profile', 'Users'],
+    }),
+    checkOutDelivery: builder.mutation({
+      query: () => ({
+        url: '/delivery/check-out',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Profile', 'Users'],
+    }),
+    acceptOrderDelivery: builder.mutation({
+      query: (orderId) => ({
+        url: `/delivery/orders/${orderId}/accept`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Orders', 'Profile', 'Users'],
+    }),
+    refuseOrderDelivery: builder.mutation({
+      query: (orderId) => ({
+        url: `/delivery/orders/${orderId}/refuse`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Orders', 'Profile', 'Users'],
+    }),
+    markOrderDeliveredDelivery: builder.mutation({
+      query: (orderId) => ({
+        url: `/delivery/orders/${orderId}/delivered`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Orders', 'Profile', 'Users'],
     }),
     getReservations: builder.query({
       query: () => '/all-reservations',
@@ -636,4 +724,11 @@ export const {
   useGetServerHistoryOrdersQuery,
   useMarkOrderDeliveredServerMutation,
   useToggleTableAvailabilityServerMutation,
+  useGetDeliveryWorkersQuery,
+  useAssignDeliveryWorkerMutation,
+  useCheckInDeliveryMutation,
+  useCheckOutDeliveryMutation,
+  useAcceptOrderDeliveryMutation,
+  useRefuseOrderDeliveryMutation,
+  useMarkOrderDeliveredDeliveryMutation,
 } = apiSlice;

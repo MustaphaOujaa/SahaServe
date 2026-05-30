@@ -38,6 +38,7 @@ class User extends Authenticatable
         "phone_number",
         "image",
         "avatar",
+        "delivery_status",
         "google_id",
         "email_verified_at",
     ];

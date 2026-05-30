@@ -2,17 +2,17 @@
 
 namespace App\Events;
 
-use App\Models\Order;
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OrderStatusUpdated implements ShouldBroadcastNow
+class DeliveryWorkerStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
-    public function __construct(public Order $order)
+    public function __construct(public User $worker)
     {
     }
 
@@ -23,13 +23,18 @@ class OrderStatusUpdated implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'order.status.updated';
+        return 'delivery.status.updated';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'order' => $this->order->loadMissing(['user', 'items.dish', 'table', 'deliveryWorker'])->toArray(),
+            'worker' => [
+                'id' => $this->worker->id,
+                'name' => $this->worker->name,
+                'phone_number' => $this->worker->phone_number,
+                'delivery_status' => $this->worker->delivery_status,
+            ],
         ];
     }
 }

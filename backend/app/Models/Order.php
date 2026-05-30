@@ -13,6 +13,7 @@ class Order extends Model
         'delivery_address',
         'table_id',
         'delivery_worker_id',
+        'delivery_status',
     ];
 
     public function user()
