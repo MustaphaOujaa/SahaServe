@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import logoImg from '../../assets/logo.png';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -9,8 +10,15 @@ const Footer = () => {
     <footer className="bg-brown-dark text-[rgba(255,255,255,0.6)] px-[5%] py-16 pb-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 mb-12">
         <div className="flex flex-col">
-          <Link to="/" className="font-['Cormorant_Garamond'] text-[1.7rem] font-bold text-white no-underline mb-4">
-            Saha<span className="text-gold">Serve</span>
+          <Link to="/" className="flex items-center gap-3.5 no-underline mb-4">
+            <img
+              src={logoImg}
+              alt="SahaServe Logo"
+              className="h-11 w-11 object-cover rounded-full border border-gold/20 shadow-sm bg-white p-0.5"
+            />
+            <span className="font-['Cormorant_Garamond'] text-[1.75rem] font-bold text-white">
+              Saha<span className="text-gold">Serve</span>
+            </span>
           </Link>
           <p className="text-[0.85rem] leading-[1.7] max-w-[240px]">
             {t('footer.description')}
