@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ButtonSpinner } from '../UI/Loading';
 import { useGetFavoritesQuery, useGetCartQuery } from '../../redux/api/apiSlice';
 import { changeLanguage, languages } from '../../i18n';
+import logoImg from '../../assets/logo.png';
 
 const FlagIcon = ({ language, className = '' }) => (
   <img
@@ -112,8 +113,15 @@ const Navbar = () => {
           ? 'bg-white h-16 shadow-custom-md px-[4%]'
           : 'bg-[rgba(250,245,236,0.96)] h-[72px] backdrop-blur-[18px] border-b border-[rgba(200,146,42,0.15)] shadow-custom'
     }`}>
-      <Link to="/" className={`font-['Cormorant_Garamond'] text-[1.7rem] font-bold no-underline transition-colors duration-300 ${isAuthPage ? 'text-white' : 'text-brown-dark'}`}>
-        Saha<span className="text-gold">Serve</span>
+      <Link to="/" className="flex items-center gap-3.5 no-underline">
+        <img
+          src={logoImg}
+          alt="SahaServe Logo"
+          className="h-11 w-11 object-cover rounded-full border border-gold/20 shadow-sm bg-white p-0.5"
+        />
+        <span className={`font-['Cormorant_Garamond'] text-[1.75rem] font-bold transition-colors duration-300 ${isAuthPage ? 'text-white' : 'text-brown-dark'}`}>
+          Saha<span className="text-gold">Serve</span>
+        </span>
       </Link>
 
       {!isAuthPage ? (

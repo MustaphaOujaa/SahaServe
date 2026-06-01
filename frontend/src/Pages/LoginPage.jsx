@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import logoImg from '../assets/logo.png';
 
 const LoginPage = () => {
   const { t } = useTranslation();
@@ -168,8 +169,17 @@ const LoginPage = () => {
           {!isSuccess ? (
             <>
               <div className="mb-9">
-                <span className="inline-block mb-1 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-medium">{t('auth.secureAccess')}</span>
-                <h2 className="font-['Cormorant_Garamond'] text-[2.2rem] font-bold text-brown-dark leading-[1.2] mb-1">{t('auth.signInTo')} <em className="text-gold italic not-italic">SahaServe</em></h2>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <img
+                    src={logoImg}
+                    alt="SahaServe Logo"
+                    className="h-16 w-16 object-cover rounded-full border border-gold/20 shadow-md bg-white p-0.5 animate-[popIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)_both]"
+                  />
+                  <div>
+                    <span className="block mb-0.5 text-[0.75rem] tracking-[0.18em] uppercase text-gold font-semibold">{t('auth.secureAccess')}</span>
+                    <h2 className="font-['Cormorant_Garamond'] text-[2.1rem] font-bold text-brown-dark leading-[1.2]">{t('auth.signInTo')} <em className="text-gold italic not-italic">SahaServe</em></h2>
+                  </div>
+                </div>
                 <div className="w-9 h-[3px] bg-gold rounded-[2px] my-3"></div>
                 <p className="text-[0.87rem] text-text-mid leading-[1.6]">{t('auth.enterCredentials')}</p>
               </div>
