@@ -12,6 +12,7 @@ class Order extends Model
         'order_type',
         'delivery_address',
         'table_id',
+        'payment_method',
         'delivery_worker_id',
         'delivery_status',
     ];

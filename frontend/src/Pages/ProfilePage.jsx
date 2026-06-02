@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../Components/UI/Loading';
 import imageCompression from 'browser-image-compression';
+import { downloadInvoice } from '../utils/api';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
@@ -106,6 +107,14 @@ const ProfilePage = () => {
     }
   };
 
+  const handleInvoiceDownload = async (type, id) => {
+    try {
+      await downloadInvoice(type, id);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t('profile.invoiceDownloadError'));
+    }
+  };
+
   if (isLoading) {
     return <PageLoader label={t('profile.loading')} />;
   }
@@ -120,6 +129,13 @@ const ProfilePage = () => {
     if (!value) return t('common.N/A');
     return new Date(value).toLocaleDateString();
   };
+
+  const deliveryOrders = [...orders]
+    .filter((order) => order.order_type === 'home_delivery')
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+  const deliveryOrder = deliveryOrders.find((order) => !['delivered', 'cancelled'].includes(order.status)) || deliveryOrders[0];
+  const deliveryStatus = deliveryOrder?.delivery_status || deliveryOrder?.status || t('common.N/A');
 
   const renderSection = () => {
     switch(activeSection) {
@@ -167,7 +183,7 @@ const ProfilePage = () => {
                 </div>
                 <p className="text-text-mid mb-4">{t('profile.noOrders')}</p>
                 <Link to="/menu" className="inline-block px-6 py-2 rounded-full border border-gold text-gold font-semibold hover:bg-gold hover:text-white transition-all">
-                  {t('menu.viewMenu')}
+                  {t('home.viewMenu')}
                 </Link>
               </div>
             ) : (
@@ -180,6 +196,7 @@ const ProfilePage = () => {
                     <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.total')}</th>
                     <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.status')}</th>
                     <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.action')}</th>
+                    <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.invoice')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -200,6 +217,16 @@ const ProfilePage = () => {
                         <span className="text-[0.8rem] text-text-mid">
                           {order.items?.map((item) => `${item.dish?.name || t('dishes.dish')} x${item.quantity}`).join(', ') || t('profile.noItems')}
                         </span>
+                      </td>
+                      <td className="p-4">
+                        <button
+                          type="button"
+                          onClick={() => handleInvoiceDownload('order', order.id)}
+                          className="px-4 py-1.5 rounded-full border border-gold text-gold text-[0.8rem] font-semibold hover:bg-gold hover:text-white transition-all inline-flex items-center gap-2"
+                        >
+                          <i className="fas fa-file-invoice"></i>
+                          PDF
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -237,6 +264,7 @@ const ProfilePage = () => {
                       <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.guests')}</th>
                       <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.status')}</th>
                       <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.action')}</th>
+                      <th className="p-4 text-[0.75rem] font-bold text-text-mid uppercase tracking-wider">{t('profile.invoice')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,6 +291,16 @@ const ProfilePage = () => {
                             {t('profile.cancel')}
                           </button>
                         </td>
+                        <td className="p-4">
+                          <button
+                            type="button"
+                            onClick={() => handleInvoiceDownload('reservation', res.id)}
+                            className="px-4 py-1.5 rounded-full border border-gold text-gold text-[0.8rem] font-semibold hover:bg-gold hover:text-white transition-all inline-flex items-center gap-2"
+                          >
+                            <i className="fas fa-file-invoice"></i>
+                            PDF
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -278,36 +316,51 @@ const ProfilePage = () => {
               <i className="fas fa-map-location-dot text-gold"></i> {t('profile.trackOrder')}
             </h2>
             <div className="flex flex-col gap-6">
-              <div className="bg-gold-pale p-5 rounded-[12px] border-l-4 border-gold flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-brown-dark block text-[1.1rem]">{t('profile.trackOrderNum', { number: 'SH-8910' })}</span>
-                  <p className="text-[0.85rem] text-text-mid mt-0.5">{t('profile.deliveryScooter')}</p>
+              {loadingOrders ? (
+                <p className="text-text-mid text-center py-4">{t('common.loading')}</p>
+              ) : deliveryOrder ? (
+                <div className="bg-gold-pale p-5 rounded-[12px] border-l-4 border-gold">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <span className="font-bold text-brown-dark block text-[1.1rem]">{t('profile.trackOrderNum', { number: deliveryOrder.id })}</span>
+                      <p className="text-[0.85rem] text-text-mid mt-0.5">{deliveryOrder.delivery_address || user?.adress || t('common.notSet')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-gold font-bold capitalize">
+                      <span className="w-2 h-2 rounded-full bg-[#27ae60] animate-pulse"></span> {String(deliveryStatus).replace('_', ' ')}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+                    <div className="rounded-[12px] bg-white/80 border border-beige p-4">
+                      <span className="block text-[0.72rem] font-bold uppercase tracking-wider text-text-mid">{t('profile.orderStatus')}</span>
+                      <strong className="text-brown-dark capitalize">{deliveryOrder.status}</strong>
+                    </div>
+                    <div className="rounded-[12px] bg-white/80 border border-beige p-4">
+                      <span className="block text-[0.72rem] font-bold uppercase tracking-wider text-text-mid">{t('profile.placed')}</span>
+                      <strong className="text-brown-dark">{formatDate(deliveryOrder.created_at)}</strong>
+                    </div>
+                    <div className="rounded-[12px] bg-white/80 border border-beige p-4">
+                      <span className="block text-[0.72rem] font-bold uppercase tracking-wider text-text-mid">{t('profile.payment')}</span>
+                      <strong className="text-brown-dark capitalize">{deliveryOrder.payment_method || t('common.notSet')}</strong>
+                    </div>
+                    <div className="rounded-[12px] bg-white/80 border border-beige p-4">
+                      <span className="block text-[0.72rem] font-bold uppercase tracking-wider text-text-mid">{t('profile.total')}</span>
+                      <strong className="text-brown-dark">{formatMoney(deliveryOrder.total_price)}</strong>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gold font-bold">
-                  <span className="w-2 h-2 rounded-full bg-[#27ae60] animate-pulse"></span> {t('profile.outForDelivery')}
+              ) : (
+                <div className="bg-cream p-5 rounded-[12px] border border-beige text-center">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mx-auto mb-3 text-gold">
+                    <i className="fas fa-truck"></i>
+                  </div>
+                  <p className="font-semibold text-brown-dark">{t('profile.noDeliveryOrder')}</p>
+                  <p className="text-[0.85rem] text-text-mid mt-1">{t('profile.deliveryOrderHint')}</p>
                 </div>
-              </div>
+              )}
               <div className="relative h-[400px] rounded-[24px] overflow-hidden shadow-md">
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3323.8463519391094!2d-7.640656923456!3d33.58334467333642!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda7d2938361074d%3A0x6b2e1b12f2c27b0!2sQuartier%20Gauthier%2C%20Casablanca%2020250%2C%20Morocco!5e0!3m2!1sen!2sma!4v1715850000000!5m2!1sen!2sma" 
                   width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" title={t('profile.trackOrder')}></iframe>
-                <div className="absolute bottom-5 left-5 right-5 bg-white/90 backdrop-blur-md p-5 rounded-[12px] shadow-lg flex items-center gap-6">
-                  <div className="flex items-center gap-4">
-                    <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&q=80" alt="Courier" className="w-12 h-12 rounded-full object-cover" />
-                    <div>
-                      <span className="font-bold text-brown-dark block">Yassine B.</span>
-                      <span className="text-[0.8rem] text-text-mid flex items-center gap-1.5"><i className="fas fa-star text-gold"></i> 4.9 {t('users.delivery')}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="w-10 h-10 rounded-full border border-beige bg-white text-text-mid flex items-center justify-center hover:text-gold hover:border-gold transition-all"><i className="fas fa-phone"></i></button>
-                    <button className="w-10 h-10 rounded-full border border-beige bg-white text-text-mid flex items-center justify-center hover:text-gold hover:border-gold transition-all"><i className="fas fa-message"></i></button>
-                  </div>
-                  <div className="ml-auto text-right">
-                    <span className="text-[1.2rem] font-bold text-gold block">12 {t('profile.mins')}</span>
-                    <span className="text-[0.7rem] uppercase text-text-mid tracking-wider">{t('profile.estimatedArrival')}</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

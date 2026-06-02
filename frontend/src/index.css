@@ -238,6 +238,16 @@ body {
   display: none;
 }
 
+.date-input-dark::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1) brightness(1.8);
+  opacity: 0.9;
+}
+
+.date-input-dark::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 /* RTL Support */
 [dir="rtl"] {
   text-align: right;
