@@ -287,7 +287,8 @@
     "manageTables": "Gérer les tables",
     "noDeliveries": "Aucune livraison active.",
     "noDeliveryHistory": "Aucune livraison terminée.",
-    "activeDeliveries": "Actives"
+    "activeDeliveries": "Actives",
+    "exportPdfError": "Impossible d'exporter le rapport PDF."
   },
   "orders": {
     "order": "Commande",
@@ -577,7 +578,14 @@
     "updateAvatar": "Mettre à jour l'image de profil",
     "items": "Articles",
     "noItems": "Aucun article",
-    "mins": "mins"
+    "mins": "mins",
+    "invoice": "Facture",
+    "invoiceDownloadError": "Impossible de télécharger la facture",
+    "orderStatus": "Statut de la commande",
+    "placed": "Passée le",
+    "payment": "Paiement",
+    "noDeliveryOrder": "Aucune commande en livraison à suivre pour le moment.",
+    "deliveryOrderHint": "Les commandes en livraison à domicile apparaîtront ici après le paiement."
   },
   "favourites": {
     "title": "Vos Favoris",

@@ -33,6 +33,7 @@ import {
 } from "../redux/api/apiSlice";
 import { ButtonSpinner, LoadingOverlay } from "../Components/UI/Loading";
 import ConfirmDialog from "../Components/UI/ConfirmDialog";
+import { downloadAdminReport } from "../utils/api";
 
 const sections = (t) => [
   { id: "overview", label: t('dashboard.overview'), icon: "fa-border-all" },
@@ -51,108 +52,6 @@ const sameDay = (value, date) => {
   if (!date) return true;
   if (!value) return false;
   return value.slice(0, 10) === date;
-};
-
-const escapePdfText = (value) =>
-  String(value ?? "")
-    .normalize("NFKD")
-    .replace(/[^\x00-\x7F]/g, "?")
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/[\r\n]+/g, " ");
-
-const wrapText = (value, maxLength = 86) => {
-  const words = String(value ?? "").split(/\s+/).filter(Boolean);
-  const lines = [];
-  let line = "";
-
-  words.forEach((word) => {
-    const nextLine = line ? `${line} ${word}` : word;
-    if (nextLine.length > maxLength) {
-      if (line) lines.push(line);
-      line = word;
-    } else {
-      line = nextLine;
-    }
-  });
-
-  if (line) lines.push(line);
-  return lines.length ? lines : [""];
-};
-
-const downloadTextPdf = ({ title, subtitle, sections: pdfSections, fileName }) => {
-  const pageHeight = 792;
-  const pages = [[`BT /F1 18 Tf 50 742 Td (${escapePdfText(title)}) Tj`]];
-  let y = 718;
-
-  const addLine = (text, size = 10, indent = 0) => {
-    if (y < 54) {
-      pages[pages.length - 1].push("ET");
-      y = 742;
-      pages.push([`BT /F1 ${size} Tf ${50 + indent} ${y} Td (${escapePdfText(text)}) Tj`]);
-      y -= 16;
-      return;
-    }
-
-    pages[pages.length - 1].push(`/F1 ${size} Tf ${50 + indent} ${y} Td (${escapePdfText(text)}) Tj`);
-    y -= size + 6;
-  };
-
-  addLine(subtitle, 10);
-  addLine(`Generated: ${new Date().toLocaleString()}`, 9);
-  addLine("", 8);
-
-  pdfSections.forEach((section) => {
-    addLine(section.heading, 13);
-    section.lines.forEach((line) => {
-      wrapText(line, 92).forEach((wrappedLine) => addLine(wrappedLine, 9, 10));
-    });
-    addLine("", 8);
-  });
-
-  pages[pages.length - 1].push("ET");
-  const pageObjects = [];
-  const contentObjects = [];
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "",
-    "3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-  ];
-
-  pages.forEach((pageLines, index) => {
-    const pageObjectId = 4 + index * 2;
-    const contentObjectId = pageObjectId + 1;
-    const stream = pageLines.join("\n");
-    pageObjects.push(`${pageObjectId} 0 R`);
-    contentObjects.push(
-      `${pageObjectId} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >> endobj`,
-      `${contentObjectId} 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`
-    );
-  });
-
-  objects[1] = `2 0 obj << /Type /Pages /Kids [${pageObjects.join(" ")}] /Count ${pages.length} >> endobj`;
-  objects.push(...contentObjects);
-
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object) => {
-    offsets.push(pdf.length);
-    pdf += `${object}\n`;
-  });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-
-  const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
 };
 
 const orderStatuses = ["pending", "confirmed", "preparing", "prepared", "delivered", "cancelled"];
@@ -665,96 +564,12 @@ const DashboardPage = () => {
     [activeSection, adminOrders, isUpdatingOrderStatus]
   );
 
-  const handleExportPdf = () => {
-    if (exportReport === "orders") {
-      const filteredOrders = adminOrders.filter((order) => sameDay(order.created_at, exportDate));
-      downloadTextPdf({
-        title: "Orders Report",
-        subtitle: `Orders for ${exportDate}`,
-        fileName: `orders-${exportDate}.pdf`,
-        sections: [
-          {
-            heading: "Summary",
-            lines: [
-              `Orders: ${filteredOrders.length}`,
-              `Revenue: ${formatMoney(filteredOrders.reduce((sum, order) => sum + Number(order.total_price || 0), 0))}`,
-            ],
-          },
-          {
-            heading: "Orders",
-            lines: filteredOrders.length
-              ? filteredOrders.map((order) => `#${order.id} | ${order.user?.name || "Unknown customer"} | ${formatOrderItems(order.items)} | ${formatMoney(order.total_price)} | ${order.status}`)
-              : ["No orders found for this day."],
-          },
-        ],
-      });
-      return;
+  const handleExportPdf = async () => {
+    try {
+      await downloadAdminReport(exportReport, exportDate);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t('dashboard.exportPdfError'));
     }
-
-    if (exportReport === "reservations") {
-      const filteredReservations = adminReservations.filter((reservation) => sameDay(reservation.reservation_date, exportDate));
-      downloadTextPdf({
-        title: "Reservations Report",
-        subtitle: `Reservations for ${exportDate}`,
-        fileName: `reservations-${exportDate}.pdf`,
-        sections: [
-          {
-            heading: "Summary",
-            lines: [`Reservations: ${filteredReservations.length}`],
-          },
-          {
-            heading: "Reservations",
-            lines: filteredReservations.length
-              ? filteredReservations.map((reservation) => `${reservation.user?.name || "Guest"} | Table ${reservation.table?.number || reservation.table_id} | ${formatTimeRange(reservation)} | ${reservation.guests_number || "N/A"} guests | ${reservation.status}`)
-              : ["No reservations found for this day."],
-          },
-        ],
-      });
-      return;
-    }
-
-    if (isReviewAnalysisBusy) {
-      toast.error("Review analysis is still loading.");
-      return;
-    }
-
-    downloadTextPdf({
-      title: "Review Analysis Report",
-      subtitle: `Review analysis for ${exportDate}`,
-      fileName: `review-analysis-${exportDate}.pdf`,
-      sections: [
-        {
-          heading: "Summary",
-          lines: reviewAnalysis
-            ? [
-                `Sentiment: ${reviewAnalysis.sentiment || "N/A"}`,
-                `Confidence: ${(Number(reviewAnalysis.confidence || 0) * 100).toFixed(0)}%`,
-                `Severity: ${Number(reviewAnalysis.severity_score || 0).toFixed(1)}/10`,
-                `Reviews analyzed: ${analyzedReviews.length}`,
-                `Category: ${reviewAnalysis.category || "Restaurant"}`,
-              ]
-            : ["No review analysis available for this day."],
-        },
-        {
-          heading: "Aspects",
-          lines: reviewAnalysis?.aspects
-            ? Object.entries(reviewAnalysis.aspects).map(([aspect, value]) => `${aspect}: ${value}`)
-            : ["No aspects returned."],
-        },
-        {
-          heading: "Key Points",
-          lines: reviewAnalysis?.key_points?.length ? reviewAnalysis.key_points : ["No key points returned."],
-        },
-        {
-          heading: "Business Insight",
-          lines: [
-            `Main issue: ${reviewAnalysis?.main_issue || "No primary complaint detected"}`,
-            `Main problem: ${reviewAnalysis?.business_insight?.main_problem || "No main problem identified."}`,
-            `Recommendation: ${reviewAnalysis?.business_insight?.recommendation || "No recommendation returned."}`,
-          ],
-        },
-      ],
-    });
   };
 
   const visibleSections = activeSection === "overview" ? sections(t).slice(1).map((section) => section.id) : [activeSection];
@@ -1181,7 +996,7 @@ const DashboardPage = () => {
                   type="date"
                   value={exportDate}
                   onChange={(event) => setExportDate(event.target.value)}
-                  className="rounded-full border border-white/10 bg-brown-dark px-3 py-2 text-[0.78rem] font-semibold text-white outline-none focus:border-gold"
+                  className="date-input-dark rounded-full border border-white/10 bg-brown-dark px-3 py-2 text-[0.78rem] font-semibold text-white outline-none focus:border-gold"
                 />
                 <button type="button" onClick={handleExportPdf} className="btn bg-white/10 text-white hover:bg-white/15">
                   <i className="fas fa-download text-[0.75rem]"></i>

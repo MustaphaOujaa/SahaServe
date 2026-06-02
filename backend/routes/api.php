@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\ServerController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\AdminReportController;
 
 ## PUBLIC ROUTES -------------------------------------------------
 
@@ -72,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //orders — client
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/my-orders', [OrderController::class, 'userOrders']);
+    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'order']);
 
     //delivery worker
     Route::get('/delivery/current', [DeliveryController::class, 'current']);
@@ -109,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //----ROLES AND PERMISSIONS----
     Route::middleware('permission:manage-roles')->group(function () {
         Route::get('/roles-permissions', [AuthController::class, 'rolesAndPermissions']);
+        Route::get('/admin/reports/pdf', [AdminReportController::class, 'download']);
     });
 
     //----CATEGORIES----
@@ -162,6 +166,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('permission:make-reservation')->group(function () {
         Route::get('/user-reservations', [ReservationController::class, 'getUserReservations']);
         Route::post('/reservations', [ReservationController::class, 'store']);
+        Route::get('/reservations/{id}/invoice', [InvoiceController::class, 'reservation']);
     });
     Route::middleware('permission:manage-reservation')->group(function () {
         Route::get('/all-reservations', [ReservationController::class, 'getAllReservations']);

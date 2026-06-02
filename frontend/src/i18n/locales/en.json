@@ -287,7 +287,8 @@
     "manageTables": "Manage Tables",
     "noDeliveries": "No active deliveries.",
     "noDeliveryHistory": "No completed deliveries yet.",
-    "activeDeliveries": "Active"
+    "activeDeliveries": "Active",
+    "exportPdfError": "Could not export PDF report."
   },
   "orders": {
     "order": "Order",
@@ -590,7 +591,14 @@
     "updateAvatar": "Update Profile Picture",
     "items": "Items",
     "noItems": "No items",
-    "mins": "mins"
+    "mins": "mins",
+    "invoice": "Invoice",
+    "invoiceDownloadError": "Could not download invoice",
+    "orderStatus": "Order status",
+    "placed": "Placed",
+    "payment": "Payment",
+    "noDeliveryOrder": "No delivery order to track right now.",
+    "deliveryOrderHint": "Home delivery orders will appear here after checkout."
   },
   "favourites": {
     "title": "Your Favourites",

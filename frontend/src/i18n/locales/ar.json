@@ -287,7 +287,8 @@
     "manageTables": "إدارة الطاولات",
     "noDeliveries": "لا توجد توصيلات نشطة",
     "noDeliveryHistory": "لا يوجد سجل توصيلات",
-    "activeDeliveries": "نشط"
+    "activeDeliveries": "نشط",
+    "exportPdfError": "تعذر تصدير تقرير PDF."
   },
   "orders": {
     "order": "طلب",
@@ -591,7 +592,14 @@
     "updateAvatar": "تحديث صورة الملف الشخصي",
     "items": "العناصر",
     "noItems": "لا توجد عناصر",
-    "mins": "دقائق"
+    "mins": "دقائق",
+    "invoice": "الفاتورة",
+    "invoiceDownloadError": "تعذر تنزيل الفاتورة",
+    "orderStatus": "حالة الطلب",
+    "placed": "تاريخ الطلب",
+    "payment": "الدفع",
+    "noDeliveryOrder": "لا يوجد طلب توصيل لتتبعه الآن.",
+    "deliveryOrderHint": "ستظهر طلبات التوصيل إلى المنزل هنا بعد إتمام الطلب."
   },
   "favourites": {
     "title": "أطباقك المفضلة",
