@@ -27,6 +27,22 @@ const Navbar = () => {
   const location = useLocation();
   const { t, i18n } = useTranslation();
 
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
@@ -110,8 +126,8 @@ const Navbar = () => {
       isAuthPage
         ? 'bg-transparent h-[72px] border-none shadow-none backdrop-blur-none'
         : scrolled
-          ? 'bg-white h-16 shadow-custom-md px-[4%]'
-          : 'bg-[rgba(250,245,236,0.96)] h-[72px] backdrop-blur-[18px] border-b border-[rgba(200,146,42,0.15)] shadow-custom'
+          ? 'nav-bg-scrolled h-16 shadow-custom-md px-[4%]'
+          : 'nav-bg-normal h-[72px] backdrop-blur-[18px] border-b border-[rgba(200,146,42,0.15)] shadow-custom'
     }`}>
       <Link to="/" className="flex items-center gap-3.5 no-underline">
         <img
@@ -159,6 +175,14 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-10 h-10 rounded-full bg-gold-pale flex items-center justify-center text-gold text-[1.05rem] hover:bg-gold hover:text-white transition-all border border-[rgba(200,146,42,0.15)] cursor-pointer focus:outline-none"
+              aria-label="Toggle Dark Mode"
+            >
+              <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+            </button>
 
             {user && isClient && (
               <div className="hidden md:flex gap-[0.7rem]">
@@ -242,6 +266,13 @@ const Navbar = () => {
                 <span>{lang.nativeName}</span>
               </button>
             ))}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[0.75rem] font-semibold transition-all bg-gold-pale text-gold hover:bg-gold hover:text-white cursor-pointer"
+            >
+              <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+              <span>{darkMode ? 'Mode Clair' : 'Mode Sombre'}</span>
+            </button>
           </div>
 
           {user && isClient && (
