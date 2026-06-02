@@ -1023,7 +1023,7 @@ const DashboardPage = () => {
         </div>
       </section>
 
-      <div className="sticky top-[72px] z-[80] border-b border-[rgba(200,146,42,0.14)] bg-[rgba(250,245,236,0.96)] px-[5%] py-3 shadow-[0_4px_20px_rgba(26,15,0,0.06)] backdrop-blur-md">
+      <div className="sticky top-[72px] z-[80] border-b border-[rgba(200,146,42,0.14)] dark:border-gold/20 bg-[rgba(250,245,236,0.96)] dark:bg-[rgba(26,15,0,0.96)] px-[5%] py-3 shadow-[0_4px_20px_rgba(26,15,0,0.06)] backdrop-blur-md">
         <div className="flex gap-2 overflow-x-auto scrollbar-none">
           {sections(t).map((section) => (
             <button
@@ -1032,7 +1032,7 @@ const DashboardPage = () => {
               className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-[0.8rem] font-semibold transition-all ${
                 activeSection === section.id
                   ? "border-gold bg-gold text-white shadow-[0_3px_12px_rgba(200,146,42,0.28)]"
-                  : "border-beige bg-white text-text-mid hover:border-gold hover:text-gold"
+                  : "dash-tab-inactive border-beige bg-white text-text-mid hover:border-gold hover:text-gold"
               }`}
             >
               <i className={`fas ${section.icon} text-[0.75rem]`}></i>

@@ -109,7 +109,7 @@ const MenuPage = () => {
         </div>
       </div>
 
-      <div className="sticky top-[72px] z-[90] bg-[rgba(250,245,236,0.97)] border-b border-[rgba(200,146,42,0.12)] px-[5%] py-3 shadow-[0_4px_20px_rgba(26,15,0,0.06)] backdrop-blur-md">
+      <div className="sticky top-[72px] z-[90] bg-white/95 dark:bg-brown-dark/95 border-b border-[rgba(200,146,42,0.12)] dark:border-gold/20 px-[5%] py-3 shadow-[0_4px_20px_rgba(26,15,0,0.06)] backdrop-blur-md">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="relative flex-1 min-w-[200px] max-w-[280px]">
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gold text-[0.85rem]"></i>
@@ -118,7 +118,7 @@ const MenuPage = () => {
               placeholder={t('menu.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.85rem] outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.1)] transition-all"
+              className="menu-search-input w-full pl-10 pr-4 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.85rem] outline-none focus:border-gold focus:shadow-[0_0_0_3px_rgba(200,146,42,0.1)] transition-all"
             />
           </div>
 
@@ -127,19 +127,19 @@ const MenuPage = () => {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-[1.5px] font-medium text-[0.8rem] transition-all whitespace-nowrap ${activeCategory === cat.id ? 'bg-gold border-gold text-white shadow-[0_3px_12px_rgba(200,146,42,0.3)]' : 'bg-white border-beige text-text-mid hover:border-gold hover:text-gold'}`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-[1.5px] font-medium text-[0.8rem] transition-all whitespace-nowrap ${activeCategory === cat.id ? 'bg-gold border-gold text-white shadow-[0_3px_12px_rgba(200,146,42,0.3)]' : 'menu-btn-inactive bg-white border-beige text-text-mid hover:border-gold hover:text-gold'}`}
               >
                 <i className={`fas ${cat.icon} text-[0.75rem]`}></i> {cat.name}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 border-l border-beige pl-4 ml-2">
+          <div className="flex flex-wrap gap-2 border-l border-beige dark:border-gold/20 pl-4 ml-2">
             {tagFilters.map(tag => (
               <button
                 key={tag.id}
                 onClick={() => toggleTag(tag.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-[1.5px] font-medium text-[0.8rem] transition-all whitespace-nowrap ${activeTags.includes(tag.id) ? 'bg-brown-dark border-brown-dark text-gold' : 'bg-white border-beige text-text-mid hover:border-gold hover:text-gold'}`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-[1.5px] font-medium text-[0.8rem] transition-all whitespace-nowrap ${activeTags.includes(tag.id) ? 'menu-tag-active bg-brown-dark border-brown-dark text-gold' : 'menu-btn-inactive bg-white border-beige text-text-mid hover:border-gold hover:text-gold'}`}
               >
                 <i className={`fas ${tag.icon} text-[0.75rem]`}></i> {tag.name}
               </button>
@@ -150,7 +150,7 @@ const MenuPage = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="pl-4 pr-10 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.8rem] text-text-mid outline-none cursor-pointer appearance-none focus:border-gold transition-all"
+              className="menu-select pl-4 pr-10 py-2.5 border-[1.5px] border-beige rounded-full bg-white text-[0.8rem] text-text-mid outline-none cursor-pointer appearance-none focus:border-gold transition-all"
             >
               <option value="default">{t('menu.sortDefault')}</option>
               <option value="rating">{t('menu.sortRating')}</option>

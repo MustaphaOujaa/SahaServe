@@ -208,7 +208,7 @@ const Soa = () => {
       {/* ─── CHATBOT FAB (TRIGGER BUTTON) ─── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-[linear-gradient(135deg,var(--brown-dark)_0%,#2a1200_100%)] border-2 border-gold/40 flex items-center justify-center cursor-pointer shadow-custom-md transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none`}
+        className={`soa-widget fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-[linear-gradient(135deg,var(--brown-dark)_0%,#2a1200_100%)] border-2 border-gold/40 flex items-center justify-center cursor-pointer shadow-custom-md transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none`}
         aria-label="Toggle AI Assistant"
       >
         {/* Glow pulsing ring around the button */}
@@ -238,7 +238,7 @@ const Soa = () => {
 
       {/* ─── CHAT PANEL WINDOW ─── */}
       <div
-        className={`fixed right-6 z-50 flex flex-col w-[340px] sm:w-[440px] lg:w-[520px] xl:w-[560px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] rounded-2xl border border-gold/30 shadow-custom-lg backdrop-blur-md bg-brown-dark/95 transition-all duration-300 origin-bottom-right ${
+        className={`soa-widget fixed right-6 z-50 flex flex-col w-[340px] sm:w-[440px] lg:w-[520px] xl:w-[560px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] rounded-2xl border border-gold/30 shadow-custom-lg backdrop-blur-md bg-brown-dark/95 transition-all duration-300 origin-bottom-right ${
           isOpen
             ? 'opacity-100 translate-y-0 scale-100 bottom-24 pointer-events-auto'
             : 'opacity-0 translate-y-8 scale-95 bottom-12 pointer-events-none'

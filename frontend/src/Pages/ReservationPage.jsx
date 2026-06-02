@@ -98,7 +98,7 @@ const ReservationPage = () => {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="min-h-screen bg-[rgba(250,245,236,1)] pt-28 pb-20 relative overflow-hidden flex flex-col items-center">
+    <div className="min-h-screen bg-cream pt-28 pb-20 relative overflow-hidden flex flex-col items-center">
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-[rgba(200,146,42,0.15)] to-transparent -z-10"></div>
       <div className="absolute top-20 right-[-100px] w-[300px] h-[300px] rounded-full bg-[rgba(200,146,42,0.05)] blur-[50px] -z-10"></div>
@@ -177,7 +177,7 @@ const ReservationPage = () => {
                         min={today}
                         value={formData.date}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-2 py-3 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
+                        className="w-full pl-10 pr-2 py-3 bg-cream/50 border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
                         required
                       />
                     </div>
@@ -192,7 +192,7 @@ const ReservationPage = () => {
                         name="start_time"
                         value={formData.start_time}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-2 py-3 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
+                        className="w-full pl-10 pr-2 py-3 bg-cream/50 border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
                         required
                       />
                     </div>
@@ -207,7 +207,7 @@ const ReservationPage = () => {
                         name="end_time"
                         value={formData.end_time}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-2 py-3 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
+                        className="w-full pl-10 pr-2 py-3 bg-cream/50 border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.85rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
                         required
                       />
                     </div>
@@ -231,7 +231,7 @@ const ReservationPage = () => {
                       max="20"
                       value={formData.guests}
                       onChange={handleChange}
-                      className="w-full h-12 text-center bg-[rgba(250,245,236,0.5)] border-y border-[rgba(200,146,42,0.2)] text-text-dark text-[1.1rem] font-bold focus:outline-none"
+                      className="w-full h-12 text-center bg-cream/50 border-y border-[rgba(200,146,42,0.2)] text-text-dark text-[1.1rem] font-bold focus:outline-none"
                       required
                     />
                     <button 
@@ -252,7 +252,7 @@ const ReservationPage = () => {
                       name="tableId"
                       value={formData.tableId}
                       onChange={handleTableSelection}
-                      className="w-full pl-12 pr-10 py-3 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all appearance-none cursor-pointer"
+                      className="w-full pl-12 pr-10 py-3 bg-cream/50 border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all appearance-none cursor-pointer"
                       required
                     >
                       <option value="" disabled>{t('reservations.chooseTablePlaceholder')}</option>
@@ -284,7 +284,7 @@ const ReservationPage = () => {
                     onChange={handleChange}
                     rows="3"
                     placeholder={t('reservations.specialRequestsPlaceholder')}
-                    className="w-full p-4 bg-[rgba(250,245,236,0.5)] border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all resize-none"
+                    className="w-full p-4 bg-cream/50 border border-[rgba(200,146,42,0.2)] rounded-xl text-text-dark text-[0.95rem] focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all resize-none"
                   ></textarea>
                 </div>
 
