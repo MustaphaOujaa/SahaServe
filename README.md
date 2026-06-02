@@ -10,13 +10,14 @@ SahaServe is a restaurant management and ordering application. It includes a cus
 - Admin dashboard for users, roles, dishes, categories, tags, tables, orders, reservations, and reviews
 - AI dish assistant for menu recommendations and cart actions
 - AI review analysis for customer feedback insights
+- Multiple roles each one with his responsibilities (chef, server, delivery)
 
 ## Tech Stack
 
 - Frontend: React, Vite, Redux Toolkit, React Router, Tailwind CSS, RTQ Query
 - Backend: Laravel, Sanctum, Spatie Permissions, Laravel Reverb
 - AI Services: Python, FastAPI, Groq, OpenRouter
-- Database: configured through Laravel `.env`
+- Database: Sqlite configured through Laravel `.env`
 
 ## Project Structure
 
@@ -24,6 +25,8 @@ SahaServe is a restaurant management and ordering application. It includes a cus
 frontend/      React client app
 backend/       Laravel API app
 ai-services/   FastAPI AI services
+    smart-order-assistans/
+    review-analysis/
 ```
 
 ## Requirements
@@ -32,7 +35,6 @@ ai-services/   FastAPI AI services
 - Composer
 - Node.js and npm
 - Python 3
-- Database server supported by Laravel
 
 ## Setup
 
