@@ -1,0 +1,12 @@
+/vendor/
+/node_modules/
+/public/build/
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/tests/
+/.env
+/.git/
+/.phpunit.result.cache
+database/database.sqlite
