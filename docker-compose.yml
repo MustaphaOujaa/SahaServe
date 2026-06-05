@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sahaserve-backend
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/html/database/database.sqlite
+      # Make sure the backend can reach the AI services inside the docker network
+      - AI_SERVICE_URL=http://review-analysis:5000/api/analyze-reviews
+      - DISH_ASSISTANT_URL=http://smart-order-assistance:5005/assistant/chat
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+      - REVERB_SERVER_HOST=0.0.0.0
+      - REVERB_SERVER_PORT=8080
+    volumes:
+      - sqlite_data:/var/www/html/database
+      - storage_data:/var/www/html/storage
+    depends_on:
+      - review-analysis
+      - smart-order-assistance
+
+  reverb:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sahaserve-reverb
+    # Override the default apache command to start the reverb websocket server
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/html/database/database.sqlite
+    volumes:
+      - sqlite_data:/var/www/html/database
+      - storage_data:/var/www/html/storage
+    depends_on:
+      - backend
+
+  review-analysis:
+    build:
+      context: ./ai-services/review-analysis
+      dockerfile: Dockerfile
+    container_name: sahaserve-review-analysis
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  smart-order-assistance:
+    build:
+      context: ./ai-services/smart-order-assistance
+      dockerfile: Dockerfile
+    container_name: sahaserve-smart-order
+    ports:
+      - "5005:5005"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Connect to backend via docker internal network
+      - LARAVEL_API_URL=http://backend:80/api
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # These URLs need to be accessible from the user's browser, so they point to localhost
+        - VITE_API_URL=http://localhost:8000/api
+        - VITE_REVERB_APP_KEY=sahaserve-local-key
+        - VITE_REVERB_HOST=localhost
+        - VITE_REVERB_PORT=8080
+        - VITE_REVERB_SCHEME=http
+    container_name: sahaserve-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+      - reverb
+
+volumes:
+  sqlite_data:
+  storage_data:
