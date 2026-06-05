@@ -34,6 +34,12 @@ WORKDIR /var/www/html
 # Copy existing application directory contents
 COPY . /var/www/html
 
+# Fix Git/Windows case-insensitivity issues
+RUN mv /var/www/html/app/Http/Controllers/api /var/www/html/app/Http/Controllers/Api_tmp 2>/dev/null || true && \
+    mv /var/www/html/app/Http/Controllers/Api_tmp /var/www/html/app/Http/Controllers/Api 2>/dev/null || true && \
+    mv /var/www/html/app/Http/Controllers/ai /var/www/html/app/Http/Controllers/AI_tmp 2>/dev/null || true && \
+    mv /var/www/html/app/Http/Controllers/AI_tmp /var/www/html/app/Http/Controllers/AI 2>/dev/null || true
+
 # Install dependencies for production
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
