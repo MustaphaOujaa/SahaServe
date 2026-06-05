@@ -23,9 +23,10 @@ const ProfilePage = () => {
   const getAvatarUrl = () => {
     if (!user) return null;
     if (user.image && user.image !== 'null' && user.image !== '') {
+      const apiOrigin = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace(/\/api\/?$/, "");
       return user.image.startsWith('http') 
         ? user.image 
-        : `http://localhost:8000/storage/${user.image}`;
+        : `${apiOrigin}/storage/${user.image}`;
     }
     if (user.avatar && user.avatar !== 'null' && user.avatar !== '') {
       return user.avatar;
