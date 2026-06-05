@@ -89,3 +89,19 @@ Important environment values:
 - Frontend: `VITE_API_URL`, optional `VITE_REVIEW_ANALYSIS_URL`
 - Smart order assistant: `GROQ_API_KEY`, optional `LARAVEL_API_URL`
 - Review analysis: `OPENROUTER_API_KEY`
+
+## Deployment with Docker
+
+To simplify deployment on a cloud server, the entire application has been Dockerized for a production environment.
+
+You can start all services (Frontend, Backend, Reverb, and the AI Services) automatically using Docker Compose:
+
+```bash
+docker-compose up -d --build
+```
+
+Docker handles mapping the ports, spinning up the Nginx/Apache servers, syncing the SQLite database via volumes, and networking the services internally.
+
+Default Docker URLs:
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8000/api`
