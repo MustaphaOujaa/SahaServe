@@ -10,8 +10,10 @@ fi
 # Ensure correct permissions for storage, bootstrap/cache, and database
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
-# Run database migrations
-php artisan migrate --force
+if [ "$1" = "apache2-foreground" ]; then
+    # Run database migrations as www-data to prevent root ownership of sqlite files
+    su -s /bin/bash -c "php artisan migrate --force" www-data
+fi
 
 # Execute the main command (e.g. apache2-foreground or php artisan reverb:start)
 exec "$@"
