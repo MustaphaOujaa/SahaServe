@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { apiSlice } from '../redux/api/apiSlice';
 import { resolveAssetUrl } from '../utils/menuTransforms';
 
 // Call the Laravel backend proxy — never call the Python AI service directly from the browser
@@ -72,6 +74,7 @@ const ActionBanner = ({ action, text }) => {
 };
 
 const Soa = () => {
+  const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -170,6 +173,11 @@ const Soa = () => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMessage]);
+
+      // Invalidate the RTK Query cart cache so Navbar & CartPage refresh immediately
+      if (responseAction === 'cart_add' || responseAction === 'cart_remove') {
+        dispatch(apiSlice.util.invalidateTags(['Cart']));
+      }
     } catch (error) {
       console.error("AI Assistant Error:", error);
       const errorMessage = {
