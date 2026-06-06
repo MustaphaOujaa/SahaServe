@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies directly
-RUN pip install --no-cache-dir fastapi uvicorn python-dotenv requests
+# Copy and install dependencies from requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the api folder contents to /app
 COPY api/ /app/

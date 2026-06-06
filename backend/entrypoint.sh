@@ -11,6 +11,9 @@ fi
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
 if [ "$1" = "apache2-foreground" ]; then
+    # Create the storage symlink so uploaded files are publicly accessible
+    php artisan storage:link --force 2>/dev/null || true
+
     # Run database migrations as www-data to prevent root ownership of sqlite files
     su -s /bin/bash -c "php artisan migrate --force" www-data
 fi
