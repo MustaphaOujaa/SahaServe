@@ -17,6 +17,9 @@ services:
       - DB_DATABASE=/var/www/html/database/database.sqlite
       - AI_SERVICE_URL=http://review-analysis:5000/api/analyze-reviews
       - DISH_ASSISTANT_URL=http://smart-order-assistance:5005/assistant/chat
+      - REVERB_APP_ID=sahaserve-local
+      - REVERB_APP_KEY=sahaserve-local-key
+      - REVERB_APP_SECRET=sahaserve-local-secret
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
