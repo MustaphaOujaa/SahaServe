@@ -310,6 +310,33 @@ const RegisterPage = () => {
                         <>{t('common.next')} <i className="fas fa-arrow-right text-[0.8rem]"></i></>
                       )}
                     </button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-[1px] bg-beige"></div>
+                      <span className="text-[0.72rem] uppercase tracking-widest text-text-mid">{t('auth.orWithEmail') || 'or continue with'}</span>
+                      <div className="flex-1 h-[1px] bg-beige"></div>
+                    </div>
+
+                    <div className="flex flex-col gap-[0.6rem]">
+                      <div className="relative group">
+                        <button type="button" disabled className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-mid opacity-50 cursor-not-allowed">
+                          <i className="fab fa-google text-[#db4437]"></i> {t('auth.continueWithGoogle') || 'Continue with Google'}
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-brown-dark text-white text-[0.72rem] rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                          🚀 Will be available soon
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-brown-dark"></div>
+                        </div>
+                      </div>
+                      <div className="relative group">
+                        <button type="button" disabled className="w-full py-3 px-5 border-[1.5px] border-beige rounded-xl bg-white flex items-center justify-center gap-3 text-[0.88rem] font-medium text-text-mid opacity-50 cursor-not-allowed">
+                          <i className="fab fa-facebook-f text-[#1877f2]"></i> {t('auth.continueWithFacebook') || 'Continue with Facebook'}
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-brown-dark text-white text-[0.72rem] rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                          🚀 Will be available soon
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-brown-dark"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="text-center mt-7 text-[0.82rem] text-text-mid">

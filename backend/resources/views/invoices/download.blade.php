@@ -11,61 +11,74 @@
     <meta charset="utf-8">
     <title>{{ $isOrder ? 'Invoice' : 'Reservation' }} {{ $invoiceNumber }}</title>
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; color: #2d221a; font-family: DejaVu Sans, sans-serif; font-size: 13px; line-height: 1.5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { color: #2d221a; font-family: DejaVu Sans, sans-serif; font-size: 12px; line-height: 1.5; }
         .page { padding: 36px; }
-        .header { border-bottom: 2px solid #c8922a; padding-bottom: 22px; margin-bottom: 26px; }
-        .brand { float: left; width: 50%; }
-        .brand img { width: 82px; height: auto; margin-bottom: 10px; }
-        .brand-name { font-size: 24px; font-weight: 700; color: #3a2416; }
-        .invoice-meta { float: right; width: 42%; text-align: right; }
-        .invoice-title { font-size: 28px; font-weight: 700; color: #c8922a; margin-bottom: 8px; }
-        .clear { clear: both; }
-        .muted { color: #7a6b5c; }
-        .grid { width: 100%; margin-bottom: 24px; }
-        .box { width: 48%; border: 1px solid #eadcc6; padding: 14px; vertical-align: top; }
-        .box-title { color: #c8922a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-bottom: 8px; text-transform: uppercase; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #faf5ec; color: #5a4635; font-size: 11px; letter-spacing: .04em; padding: 10px; text-align: left; text-transform: uppercase; }
-        td { border-bottom: 1px solid #eadcc6; padding: 10px; vertical-align: top; }
+
+        /* ── Header ── */
+        .header-table { width: 100%; border-bottom: 2px solid #c8922a; padding-bottom: 18px; margin-bottom: 24px; }
+        .brand-name { font-size: 22px; font-weight: 700; color: #3a2416; margin-top: 6px; }
+        .brand-sub { color: #7a6b5c; font-size: 11px; }
+        .invoice-title { font-size: 26px; font-weight: 700; color: #c8922a; }
+        .invoice-meta-line { font-size: 11px; margin-top: 3px; }
+        .badge { border: 1px solid #c8922a; color: #8b641e; padding: 2px 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+        /* ── Info boxes ── */
+        .info-table { width: 100%; margin-bottom: 22px; }
+        .info-box { width: 48%; border: 1px solid #eadcc6; padding: 12px; vertical-align: top; }
+        .info-spacer { width: 4%; }
+        .box-title { color: #c8922a; font-size: 10px; font-weight: 700; letter-spacing: .05em; margin-bottom: 7px; text-transform: uppercase; }
+
+        /* ── Items table ── */
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .items-table th { background: #faf5ec; color: #5a4635; font-size: 10px; letter-spacing: .04em; padding: 9px 10px; text-align: left; text-transform: uppercase; }
+        .items-table td { border-bottom: 1px solid #eadcc6; padding: 9px 10px; vertical-align: top; }
         .right { text-align: right; }
-        .summary { margin-top: 18px; width: 42%; margin-left: auto; }
-        .summary td { border: 0; padding: 6px 0; }
-        .summary .total td { border-top: 2px solid #c8922a; color: #3a2416; font-size: 16px; font-weight: 700; padding-top: 10px; }
-        .badge { display: inline-block; border: 1px solid #c8922a; color: #8b641e; padding: 3px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .footer { border-top: 1px solid #eadcc6; color: #7a6b5c; font-size: 11px; margin-top: 34px; padding-top: 14px; text-align: center; }
+
+        /* ── Summary ── */
+        .summary-wrap { width: 100%; }
+        .summary-table { width: 42%; margin-left: auto; border-collapse: collapse; }
+        .summary-table td { padding: 5px 0; border: 0; }
+        .summary-total td { border-top: 2px solid #c8922a; color: #3a2416; font-size: 15px; font-weight: 700; padding-top: 9px; }
+
+        /* ── Footer ── */
+        .footer { border-top: 1px solid #eadcc6; color: #7a6b5c; font-size: 10px; margin-top: 32px; padding-top: 12px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="page">
-        <div class="header">
-            <div class="brand">
-                @if ($logoSource)
-                    <img src="{{ $logoSource }}" alt="SahaServe logo">
-                @endif
-                <div class="brand-name">SahaServe</div>
-                <div class="muted">{{ $isOrder ? 'Restaurant service invoice' : 'Restaurant reservation confirmation' }}</div>
-            </div>
-            <div class="invoice-meta">
-                <div class="invoice-title">{{ $isOrder ? 'Invoice' : 'Reservation' }}</div>
-                <div><strong>No:</strong> {{ $invoiceNumber }}</div>
-                <div><strong>Issued:</strong> {{ $issuedAt->format('Y-m-d H:i') }}</div>
-                <div><strong>Status:</strong> <span class="badge">{{ $status }}</span></div>
-            </div>
-            <div class="clear"></div>
-        </div>
 
-        <table class="grid">
+        {{-- ── HEADER ── --}}
+        <table class="header-table" cellpadding="0" cellspacing="0">
             <tr>
-                <td class="box">
+                <td style="width:50%; vertical-align:top;">
+                    @if ($logoSource)
+                        <img src="{{ $logoSource }}" alt="SahaServe logo" style="width:72px; height:auto; margin-bottom:6px;">
+                    @endif
+                    <div class="brand-name">SahaServe</div>
+                    <div class="brand-sub">{{ $isOrder ? 'Restaurant service invoice' : 'Restaurant reservation confirmation' }}</div>
+                </td>
+                <td style="width:50%; vertical-align:top; text-align:right;">
+                    <div class="invoice-title">{{ $isOrder ? 'INVOICE' : 'RESERVATION' }}</div>
+                    <div class="invoice-meta-line"><strong>No:</strong> {{ $invoiceNumber }}</div>
+                    <div class="invoice-meta-line"><strong>Issued:</strong> {{ $issuedAt->format('Y-m-d H:i') }}</div>
+                    <div class="invoice-meta-line"><strong>Status:</strong> <span class="badge">{{ $status }}</span></div>
+                </td>
+            </tr>
+        </table>
+
+        {{-- ── INFO BOXES ── --}}
+        <table class="info-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td class="info-box">
                     <div class="box-title">Billed to</div>
                     <strong>{{ $customer->name ?? 'Customer' }}</strong><br>
                     {{ $customer->email ?? 'No email' }}<br>
-                    {{ $customer->phone_number ?? 'No phone number' }}<br>
+                    {{ $customer->phone_number ?? 'No phone' }}<br>
                     {{ $customer->adress ?? '' }}
                 </td>
-                <td style="width: 4%; border: 0;"></td>
-                <td class="box">
+                <td class="info-spacer"></td>
+                <td class="info-box">
                     <div class="box-title">{{ $isOrder ? 'Order details' : 'Reservation details' }}</div>
                     @if ($isOrder)
                         <strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $invoiceable->order_type ?? 'order')) }}<br>
@@ -87,8 +100,9 @@
             </tr>
         </table>
 
+        {{-- ── ITEMS ── --}}
         @if ($isOrder)
-            <table>
+            <table class="items-table">
                 <thead>
                     <tr>
                         <th>Item</th>
@@ -108,18 +122,19 @@
                     @endforeach
                 </tbody>
             </table>
-            <table class="summary">
+
+            <table class="summary-table">
                 <tr>
                     <td>Subtotal</td>
                     <td class="right">{{ number_format((float) $invoiceable->total_price, 2) }} DH</td>
                 </tr>
-                <tr class="total">
-                    <td>Total</td>
-                    <td class="right">{{ number_format((float) $invoiceable->total_price, 2) }} DH</td>
+                <tr class="summary-total">
+                    <td><strong>Total</strong></td>
+                    <td class="right"><strong>{{ number_format((float) $invoiceable->total_price, 2) }} DH</strong></td>
                 </tr>
             </table>
         @else
-            <table>
+            <table class="items-table">
                 <thead>
                     <tr>
                         <th>Reservation</th>

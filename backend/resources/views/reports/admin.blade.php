@@ -12,47 +12,44 @@
     <meta charset="utf-8">
     <title>{{ $title }} - {{ $date }}</title>
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; color: #2d221a; font-family: DejaVu Sans, sans-serif; font-size: 11px; line-height: 1.45; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { color: #2d221a; font-family: DejaVu Sans, sans-serif; font-size: 11px; line-height: 1.45; }
         .page { padding: 28px; }
-        .header { border-bottom: 2px solid #c8922a; margin-bottom: 18px; padding-bottom: 16px; }
-        .brand { float: left; width: 45%; }
-        .brand img { width: 70px; margin-bottom: 8px; }
-        .brand-name { color: #3a2416; font-size: 22px; font-weight: 700; }
-        .meta { float: right; width: 50%; text-align: right; }
-        .title { color: #c8922a; font-size: 27px; font-weight: 700; margin-bottom: 6px; }
-        .clear { clear: both; }
-        .muted { color: #7a6b5c; }
-        .stats { margin-bottom: 18px; width: 100%; border-collapse: separate; border-spacing: 8px 0; }
-        .stat { border: 1px solid #eadcc6; padding: 12px; background: #fffdf9; }
+        .header-table { width: 100%; border-bottom: 2px solid #c8922a; margin-bottom: 18px; padding-bottom: 16px; }
+        .brand-name { color: #3a2416; font-size: 22px; font-weight: 700; margin-top: 6px; }
+        .title { color: #c8922a; font-size: 26px; font-weight: 700; margin-bottom: 5px; }
+        .muted { color: #7a6b5c; font-size: 10px; }
+        .stats { margin-bottom: 18px; width: 100%; border-collapse: collapse; }
+        .stat { border: 1px solid #eadcc6; padding: 12px; background: #fffdf9; width: 33%; }
         .stat-label { color: #7a6b5c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
         .stat-value { color: #3a2416; font-size: 18px; font-weight: 700; margin-top: 3px; }
         table.report { width: 100%; border-collapse: collapse; }
         .report th { background: #faf5ec; color: #5a4635; font-size: 10px; letter-spacing: .04em; padding: 8px; text-align: left; text-transform: uppercase; }
         .report td { border-bottom: 1px solid #eadcc6; padding: 8px; vertical-align: top; }
         .right { text-align: right; }
-        .badge { border: 1px solid #c8922a; color: #8b641e; display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; text-transform: uppercase; }
+        .badge { border: 1px solid #c8922a; color: #8b641e; font-size: 10px; font-weight: 700; padding: 2px 7px; text-transform: uppercase; }
         .empty { border: 1px solid #eadcc6; color: #7a6b5c; padding: 18px; text-align: center; }
         .footer { border-top: 1px solid #eadcc6; color: #7a6b5c; font-size: 10px; margin-top: 22px; padding-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="page">
-        <div class="header">
-            <div class="brand">
-                @if ($logoSource)
-                    <img src="{{ $logoSource }}" alt="SahaServe logo">
-                @endif
-                <div class="brand-name">SahaServe</div>
-                <div class="muted">Administrative report</div>
-            </div>
-            <div class="meta">
-                <div class="title">{{ $title }}</div>
-                <div><strong>Date:</strong> {{ $date }}</div>
-                <div><strong>Generated:</strong> {{ $issuedAt->format('Y-m-d H:i') }}</div>
-            </div>
-            <div class="clear"></div>
-        </div>
+        <table class="header-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="width:50%; vertical-align:top;">
+                    @if ($logoSource)
+                        <img src="{{ $logoSource }}" alt="SahaServe logo" style="width:70px; height:auto; margin-bottom:6px;">
+                    @endif
+                    <div class="brand-name">SahaServe</div>
+                    <div class="muted">Administrative report</div>
+                </td>
+                <td style="width:50%; vertical-align:top; text-align:right;">
+                    <div class="title">{{ $title }}</div>
+                    <div><strong>Date:</strong> {{ $date }}</div>
+                    <div><strong>Generated:</strong> {{ $issuedAt->format('Y-m-d H:i') }}</div>
+                </td>
+            </tr>
+        </table>
 
         @if ($type === 'orders')
             <table class="stats">
