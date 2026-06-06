@@ -76,7 +76,7 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./ai-services/review-analysis/.env
+      - ./ai-services/review-analysis/api/.env
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -88,7 +88,7 @@ services:
     ports:
       - "5005:5005"
     env_file:
-      - ./ai-services/smart-order-assistance/.env
+      - ./ai-services/smart-order-assistance/api/.env
     environment:
       - PYTHONUNBUFFERED=1
       - LARAVEL_API_URL=http://backend:80/api
