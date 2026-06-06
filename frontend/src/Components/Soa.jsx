@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-import { apiSlice } from '../redux/api/apiSlice';
+import { apiSlice, useAddToCartMutation } from '../redux/api/apiSlice';
 import { resolveAssetUrl } from '../utils/menuTransforms';
 
 // Call the Laravel backend proxy — never call the Python AI service directly from the browser
@@ -75,6 +75,8 @@ const ActionBanner = ({ action, text }) => {
 
 const Soa = () => {
   const dispatch = useDispatch();
+  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const [addingDishId, setAddingDishId] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -104,8 +106,38 @@ const Soa = () => {
     { label: "🍖 Lamb Tagine", query: "Tell me about the Lamb Tagine" }
   ];
 
-  const handleAddDishToCart = (dish) => {
-    handleSend(`Add ${dish.name} to my cart`);
+  // Direct cart add via RTK Query — uses dish.id directly, no AI round-trip needed
+  const handleAddDishToCart = async (dish) => {
+    if (!dish?.id) {
+      // Fallback: no id available, ask the AI
+      handleSend(`Add ${dish.name} to my cart`);
+      return;
+    }
+    setAddingDishId(dish.id);
+    try {
+      await addToCart({ dish_id: dish.id, quantity: 1 }).unwrap();
+      // Show a quick confirmation message in chat
+      setMessages(prev => [...prev, {
+        id: `bot-cart-${Date.now()}`,
+        sender: 'bot',
+        text: `✅ **${dish.name}** has been added to your cart!`,
+        dishes: [],
+        action: 'cart_add',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    } catch (err) {
+      const msg = err?.data?.message || 'Failed to add to cart. Please make sure you are logged in.';
+      setMessages(prev => [...prev, {
+        id: `bot-cart-err-${Date.now()}`,
+        sender: 'bot',
+        text: `❌ ${msg}`,
+        dishes: [],
+        action: 'general',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    } finally {
+      setAddingDishId(null);
+    }
   };
 
   const handleSend = async (textToSend) => {
