@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
@@ -75,6 +75,8 @@ services:
     container_name: sahaserve-review-analysis
     ports:
       - "5000:5000"
+    env_file:
+      - ./ai-services/review-analysis/.env
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -85,6 +87,8 @@ services:
     container_name: sahaserve-smart-order
     ports:
       - "5005:5005"
+    env_file:
+      - ./ai-services/smart-order-assistance/.env
     environment:
       - PYTHONUNBUFFERED=1
       - LARAVEL_API_URL=http://backend:80/api
