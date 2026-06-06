@@ -12,7 +12,7 @@ services:
       - "8000:80"
     environment:
       - APP_ENV=production
-      - APP_DEBUG=false
+      - APP_DEBUG=true
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/html/database/database.sqlite
       - AI_SERVICE_URL=http://review-analysis:5000/api/analyze-reviews
@@ -29,16 +29,13 @@ services:
       - MAIL_HOST=smtp.gmail.com
       - MAIL_PORT=587
       - MAIL_USERNAME=younesabourrig1ya@gmail.com
-      - MAIL_PASSWORD=rqai yvqp jjie aiwb
+      - "MAIL_PASSWORD=rqai yvqp jjie aiwb"
       - MAIL_ENCRYPTION=tls
       - MAIL_FROM_ADDRESS=younesabourrig1ya@gmail.com
       - MAIL_FROM_NAME=SahaServe
     volumes:
       - sqlite_data:/var/www/html/database
       - storage_data:/var/www/html/storage
-    depends_on:
-      - review-analysis
-      - smart-order-assistance
 
   reverb:
     build:
