@@ -37,6 +37,7 @@ Route::get('/tags', [TagController::class, 'index']);
 //dish assistant filtering
 Route::get('/ai/dishes/filter', [DishAssistantController::class, 'filter']);
 Route::post('/ai/assistant/chat', [DishAssistantController::class, 'chat']);
+Route::post('/ai/analyze-reviews', [DishAssistantController::class, 'analyzeReviews']);
 //categories
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);

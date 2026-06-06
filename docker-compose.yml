@@ -102,6 +102,7 @@ services:
         - VITE_REVERB_HOST=${APP_DOMAIN:-88.96.37.179}
         - VITE_REVERB_PORT=8080
         - VITE_REVERB_SCHEME=http
+        # AI services are proxied through the Laravel backend — no direct browser access needed
     container_name: sahaserve-frontend
     ports:
       - "80:80"

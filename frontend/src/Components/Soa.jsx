@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { resolveAssetUrl } from '../utils/menuTransforms';
 
-const ASSISTANT_API_URL = import.meta.env.VITE_DISH_ASSISTANT_URL || 'http://127.0.0.1:5005/assistant/chat';
+// Call the Laravel backend proxy — never call the Python AI service directly from the browser
+const ASSISTANT_API_URL = `${import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:8000'}/api/ai/assistant/chat`;
 
 /* ─── Loading context labels for different actions ─── */
 const LOADING_LABELS = {
@@ -133,10 +134,12 @@ const Soa = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(ASSISTANT_API_URL, {
-        message: text,
-        auth_token: localStorage.getItem('auth_token'),
-      });
+      const authToken = localStorage.getItem('auth_token');
+      const response = await axios.post(
+        ASSISTANT_API_URL,
+        { message: text, auth_token: authToken },
+        { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} }
+      );
       
       let responseText = "Sorry, I encountered an error.";
       let recommendedDishes = [];

@@ -601,7 +601,9 @@ export const apiSlice = createApi({
           };
         }
 
-        const reviewAnalysisUrl = `${import.meta.env.VITE_REVIEW_ANALYSIS_URL || 'http://localhost:5000/review'}/analyze`;
+        // Call the Laravel backend proxy — never call the Python AI service directly from the browser
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '');
+        const reviewAnalysisUrl = `${baseUrl}/api/ai/analyze-reviews`;
         let analysisResponse;
 
         try {

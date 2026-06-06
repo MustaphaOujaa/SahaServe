@@ -120,12 +120,14 @@ class DishAssistantController extends Controller
         ]);
 
         $message = $request->input('message');
-        $assistantUrl = env('DISH_ASSISTANT_URL', 'http://127.0.0.1:5005/assistant/chat');
+        // Read auth token from Authorization header OR from body (Soa.jsx sends it in the body)
+        $authToken = $request->bearerToken() ?? $request->input('auth_token');
+        $assistantUrl = env('DISH_ASSISTANT_URL', 'http://smart-order-assistance:5005/assistant/chat');
 
         try {
-            $response = \Illuminate\Support\Facades\Http::post($assistantUrl, [
-                'message' => $message,
-                'auth_token' => $request->bearerToken()
+            $response = \Illuminate\Support\Facades\Http::timeout(30)->post($assistantUrl, [
+                'message'    => $message,
+                'auth_token' => $authToken,
             ]);
 
             if ($response->successful()) {
@@ -142,6 +144,42 @@ class DishAssistantController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'AI Assistant service is offline or unreachable',
+                'details' => $e->getMessage()
+            ], 503);
+        }
+    }
+
+    /**
+     * Proxy review analysis requests to the Python review-analysis service.
+     * The frontend calls this endpoint; Laravel forwards to the internal Docker service.
+     */
+    public function analyzeReviews(Request $request)
+    {
+        $request->validate([
+            'reviews' => 'required|array',
+        ]);
+
+        $aiServiceUrl = env('AI_SERVICE_URL', 'http://review-analysis:5000/api/analyze-reviews');
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(60)->post($aiServiceUrl, [
+                'reviews' => $request->input('reviews'),
+            ]);
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to communicate with Review Analysis service',
+                'details' => $response->body()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Review Analysis service is offline or unreachable',
                 'details' => $e->getMessage()
             ], 503);
         }
