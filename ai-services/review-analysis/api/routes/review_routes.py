@@ -8,6 +8,6 @@ router = APIRouter()
 class ReviewRequest(BaseModel):
     reviews: List[Dict[str, Any]]
 
-@router.post("/analyze")
+@router.post("/analyze-reviews")
 def analyze(data: ReviewRequest):
     return analyze_review(data)

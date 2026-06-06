@@ -12,8 +12,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/review")
+app.include_router(router, prefix="/api")
 
 
 #uvicorn app:app --reload --port 5000
-# http://localhost:5000/review/analyze
+# http://localhost:5000/api/analyze-reviews
