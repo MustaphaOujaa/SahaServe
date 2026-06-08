@@ -1,4 +1,3 @@
-
 services:
   backend:
     build:
@@ -27,14 +26,6 @@ services:
       - BROADCAST_CONNECTION=reverb
       - QUEUE_CONNECTION=database
       - FRONTEND_URL=http://${APP_DOMAIN:-88.96.37.179}
-      - MAIL_MAILER=smtp
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=younesabourrig1ya@gmail.com
-      - "MAIL_PASSWORD=rqai yvqp jjie aiwb"
-      - MAIL_ENCRYPTION=tls
-      - MAIL_FROM_ADDRESS=younesabourrig1ya@gmail.com
-      - MAIL_FROM_NAME=SahaServe
     volumes:
       - sqlite_data:/var/www/html/database
       - storage_data:/var/www/html/storage
@@ -102,7 +93,6 @@ services:
         - VITE_REVERB_HOST=${APP_DOMAIN:-88.96.37.179}
         - VITE_REVERB_PORT=8080
         - VITE_REVERB_SCHEME=http
-        # AI services are proxied through the Laravel backend — no direct browser access needed
     container_name: sahaserve-frontend
     ports:
       - "80:80"
