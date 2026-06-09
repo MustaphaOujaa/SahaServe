@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:80"
     environment:
-      - APP_ENV=production
+      - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/html/database/database.sqlite
@@ -25,7 +25,7 @@ services:
       - REVERB_SERVER_PORT=8080
       - BROADCAST_CONNECTION=reverb
       - QUEUE_CONNECTION=database
-      - FRONTEND_URL=http://${APP_DOMAIN:-88.96.37.179}
+      - FRONTEND_URL=http://localhost
     volumes:
       - sqlite_data:/var/www/html/database
       - storage_data:/var/www/html/storage
@@ -41,7 +41,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - APP_ENV=production
+      - APP_ENV=local
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/html/database/database.sqlite
       - REVERB_APP_ID=sahaserve-local
@@ -88,9 +88,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://${APP_DOMAIN:-88.96.37.179}:8000/api
+        - VITE_API_URL=http://localhost:8000/api
         - VITE_REVERB_APP_KEY=sahaserve-local-key
-        - VITE_REVERB_HOST=${APP_DOMAIN:-88.96.37.179}
+        - VITE_REVERB_HOST=localhost
         - VITE_REVERB_PORT=8080
         - VITE_REVERB_SCHEME=http
     container_name: sahaserve-frontend
